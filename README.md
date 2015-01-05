@@ -5,6 +5,7 @@ Send push notifications to mobile devices using Amazon SNS
 
 Documentation
 -----------
+http://django-scarface.readthedocs.org/
 
 Project Home
 ------------
