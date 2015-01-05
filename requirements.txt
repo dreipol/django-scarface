@@ -1,0 +1,10 @@
+Django==1.6.9
+South==1.0.2
+psycopg2==2.5.4
+django-jenkins==0.16.4
+pylint==1.4.0
+pep8==1.5.7
+Sphinx==1.3b2
+django-apptemplates==0.0.1
+django-suit==0.2.12
+boto==2.34.0

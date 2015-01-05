@@ -1,0 +1,140 @@
+{% extends "suit:admin/base_site.html" %}
+{% load static i18n %}
+{% block title %}
+    {{ project_name }}
+{% endblock %}
+
+
+{% block extrastyle %}
+    <style>
+        .header a
+        {
+            color: white;
+
+        }
+        #header
+        {
+            background: rgb(37,144,217);
+            height: 60px;
+        }
+        .header #branding
+        {
+            background: white;
+            color: black;
+            font-weight: normal;
+            border: none;
+            height: 60px;
+            border-right: none;
+        }
+        .header #branding h1
+        {
+            color: #000000;
+            text-shadow: none;
+        }
+        .header #branding img
+        {
+            margin-top: 10px;
+        }
+        #user-tools
+        {
+            color: white;
+        }
+        .header .header-content.header-content-first
+        {
+            display: none;
+        }
+        .header #user-tools .separator
+        {
+            color: white;
+        }
+        .header #user-tools
+        {
+            text-shadow:none;
+            float: none;
+            padding-left: 223px;
+            margin-top: 9px;
+        }
+        .header #user-tools .user-links
+        {
+
+            float: right;
+        }
+        #footer .tools
+        {
+            display: none;
+        }
+
+        .footer{
+            background: rgb(51,51,51);
+            height: 60px;
+            color: white;
+            text-shadow: none;
+            font-size: 12px;
+            font-family: arial, helvetica, verdana, sans-serif;
+        }
+        .footer .content
+        {
+
+            border-top: none;
+        }
+
+        .footer .content .branding
+        {
+            width: auto;
+            float: right;
+            margin-right: 15px;
+            margin-top: 4px;
+        }
+        .footer .content .copyright
+        {
+            float: left;
+            text-align: left;
+            padding-left: 15px;
+            padding-top: 21px;
+
+        }
+        .footer .content a.logo
+        {
+            background: url("http://static.dreipol.ch/dreipol/branding/django-backend/dreipollogo.png");
+            width: 86px;
+            height: 26px;
+            display: block;
+        }
+
+        .footer .content a.logo:hover
+        {
+            background: url("http://static.dreipol.ch/dreipol/branding/django-backend/dreipollogo2.png");
+        }
+        .footer a
+        {
+            color: white;
+            text-decoration: none;
+        }
+          .footer a:hover
+        {
+            color: rgb(0,216,107);
+        }
+    .footer .separator{
+        color: white;
+    }
+
+    </style>
+{% endblock %}
+
+{% block branding %}
+    {{ project_name }}
+{% endblock %}
+
+
+
+{# Footer branding name (center) #}
+{% block footer_branding %}
+    <a class="logo" href="http://www.dreipol.ch" target="_blank"></a>
+
+{% endblock %}
+
+
+{# Footer copyright (right side) #}
+{% block copyright %}
+  Copyright &copy; {% now "Y" %} <a href="http://www.{{ project_name }}.ch" target="_blank">{{ project_name }}</a><span class="separator"> | </span><a href="http://www.dreipol.ch/#!kontakt" target="_blank">Developed by dreipol GmbH</a>
+{% endblock %}
