@@ -1,4 +1,4 @@
-![django-scarface](logo.png "django-scarface")
+![django-scarface](logo.png "docs/django-scarface")
 -----------
 
 Send push notifications to mobile devices using Amazon SNS
@@ -22,4 +22,4 @@ Trivia
 ------------
 django-scarface is named after the track ‘Push it to the limits’ featured in the movie Scarface (1983).
 
-![Scarface the movie (1983)](scarface-movie.png "Scarface the movie (1983)")
+![Scarface the movie (1983)](docs/scarface-movie.png "Scarface the movie (1983)")
