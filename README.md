@@ -1,3 +1,5 @@
+![django-scarface](logo.png "django-scarface")
+
 django-scarface
 ===============
 
@@ -20,5 +22,5 @@ https://pypi.python.org/pypi/django-scarface
 
 Trivia
 ------------
-django-scarface is named after the track ‘Push it to the limits’ featured in the movie Scarface (1883).
-
+django-scarface is named after the track ‘Push it to the limits’ featured in the movie Scarface (1983).
+![Scarface the movie (1983)](scarface-movie.png "Scarface the movie (1983)")
