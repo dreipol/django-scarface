@@ -1,4 +1,4 @@
-<img src="docs/logo.png" style="width: 322px;height: 60px;" alt="django-scarface" />
+<img src="docs/logo.png" width="322" alt="django-scarface" />
 -----------
 
 Send push notifications to mobile devices using Amazon SNS
