@@ -21,8 +21,10 @@ Edit your settings.py file::
 Native Django migrations are supported on Django 1.7 and beyond. The app will automatically
 fall back to South on older versions, however you will also need the following setting::
 
-	SOUTH_MIGRATION_MODULES = {"push_notifications": "push_notifications.south_migrations"}
-	
+	SOUTH_MIGRATION_MODULES = {"scarface": "scarface.migrations"}
+
+
+
 
 Project Home
 ------------
