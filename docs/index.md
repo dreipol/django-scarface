@@ -1,3 +1,5 @@
+![django-scarface](logo.png)
+
 # Welcome to django-scarface
 
 Send push notifications to mobile devices using Amazon SNS.
@@ -50,3 +52,9 @@ The APNS certificate and private key as a string. you can create this settings b
 
     SCARFACE_APNS_CERTIFICATE = "<YOUR-APNS-CERTIFICATE-KEY>"
     SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"
+
+
+
+Now have fun using this library and push it to the limit.
+
+![the movie](scarface-movie.png)
