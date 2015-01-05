@@ -1,4 +1,4 @@
-![django-scarface](logo.png)
+![django-scarface](logo_transparent.png)
 
 # Welcome to django-scarface
 
