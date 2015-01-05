@@ -1,7 +1,5 @@
 ![django-scarface](logo.png "django-scarface")
-
-django-scarface
-===============
+-----------
 
 Send push notifications to mobile devices using Amazon SNS
 
