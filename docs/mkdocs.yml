@@ -1,0 +1,6 @@
+site_name: django-scarface
+site_url: https://github.com/dreipol/django-scarface
+site_author: dreipol GmbH
+pages:
+- [index.md, Getting Started]
+theme: readthedocs
