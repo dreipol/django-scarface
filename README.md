@@ -2,6 +2,7 @@ django-scarface
 ===============
 
 Send push notifications to mobile devices using Amazon SNS
+
 [![Documentation Status](https://readthedocs.org/projects/django-scarface/badge/?version=latest)](https://readthedocs.org/projects/django-scarface/?badge=latest)
 
 Documentation
