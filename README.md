@@ -1,4 +1,4 @@
-![django-scarface](docs/logo.png "django-scarface")
+<img src="docs/logo.png" width="322" alt="django-scarface" />
 -----------
 
 Send push notifications to mobile devices using Amazon SNS
