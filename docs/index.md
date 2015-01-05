@@ -54,6 +54,19 @@ The APNS certificate and private key as a string. you can create this settings b
     SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"
 
 
+## Management Commands
+### extract_keys
+You can extract the SCARFACE_APNS_CERTIFICATE and SCARFACE_APNS_PRIVATE_KEY settings from a .p12 file exported from Keychain Access. The usage is as simple as the following example:
+
+    python manage.py extract_keys --file=Certificate.p12 --password=<MYPASSWORD>
+
+The output can be copied and pasted into your settings file.
+
+## Usage
+### Devices Registration
+### Send Push Notifications
+
+
 
 Now have fun using this library and [push it to the limit](https://www.youtube.com/watch?v=9D-QD_HIfjA).
 
