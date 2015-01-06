@@ -1,2 +1,2 @@
 v1.0, 2015/01/05 -- Initial release.
-
+v1.0.1, 2015/01/06 -- Updated Documentation, added logging settings, Python 3 support
