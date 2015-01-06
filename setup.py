@@ -9,12 +9,12 @@ reqs =['South>=0.8.4', 'boto>=2.34.0',]
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='django-translator',
+    name='django-scarface',
     version='1.0',
-    packages=['translator'],
+    packages=['scarface'],
     include_package_data=True,
     license='MIT License',
-    description='Translator is an app for collecting translations for specified keys in django admin.',
+    description='Send push notifications to mobile devices using Amazon SNS.',
     long_description=README,
     url='http://www.dreipol.ch/',
     author='dreipol GmbH',
