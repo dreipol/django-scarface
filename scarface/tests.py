@@ -32,9 +32,9 @@ class SNSAppManagement(TestCase):
         for resource in self.resources:
             resource.delete()
 
-    def platform_test(self, apn_platform):
-        result = apn_platform.register()
-        self.resources.append(apn_platform)
+    def platform_test(self, platform):
+        result = platform.register()
+        self.resources.append(platform)
         return result
 
     def create_apn_device(self):
