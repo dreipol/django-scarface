@@ -7,6 +7,7 @@ Replace this with more appropriate tests for your application.
 from StringIO import StringIO
 from boto.exception import BotoServerError
 from django.test import TestCase
+from django.test.utils import override_settings
 from models import APNApplication, GCMApplication, Topic, SNSDevice, PushMessage
 from utils import get_sns_connection, DefaultConnection, APP_PREFIX
 from django.core.management import call_command
@@ -75,7 +76,6 @@ class SNSAppManagement(TestCase):
         gcm_application.arn = 'arn:test_no_app'
         self.assertRaises(BotoServerError, gcm_application.delete)
 
-
     def create_app_topic(self):
         topic = Topic(self.topic_name)
         success = topic.register()
@@ -110,10 +110,9 @@ class SNSAppManagement(TestCase):
     def test_send_gcm_push(self):
         created, device = self.create_gcm_device()
         success = device.send(
-            PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
-                        message="Hello world!",
-                        sound="default"))
-        self.assertTrue(success)
+            PushMessage(badge_count=1, context='url_alert', context_id='none',
+                        has_new_content=True, message="Hello world!", sound="default"))
+        self.assertEqual(PushMessage.objects.all().count(), 1)
 
     def test_send_apn_push(self):
         created, device = self.create_apn_device()
@@ -160,6 +159,12 @@ class SNSAppManagement(TestCase):
         result = device.register_or_update(custom_user_data="Hello world!")
         self.assertIsNotNone(result)
 
+    @override_settings(SCARFACE_LOGGING_ENABLED=False)
+    def test_disable_logging(self):
+        created, device = self.create_gcm_device()
+        device.send(PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
+                              message="Hello Topic!", sound="default"))
+        self.assertEqual(0,PushMessage.objects.all().count())
 
 class DefaultConnectionWrapperTestCase(TestCase):
     def test_wrapper_empty(self):

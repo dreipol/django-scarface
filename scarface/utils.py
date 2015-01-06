@@ -45,7 +45,8 @@ class PushLogger(Decorator):
         call_kwargs = inspect.getcallargs(self.original_function, *args, **kwargs)
         push_message = call_kwargs.get('push_message')
         self.obj.sign(push_message)
-        push_message.save()
+        if logging_enabled():
+            push_message.save()
         return self.function(*args, **kwargs)
 
 
@@ -59,3 +60,6 @@ def get_sns_connection(region='eu-west-1'):
                                  aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
 
 APP_PREFIX = settings.SCARFACE_SNS_APP_PREFIX if hasattr(settings, 'SCARFACE_SNS_APP_PREFIX') else settings.SITE_NAME
+
+def logging_enabled():
+    return settings.SCARFACE_LOGGING_ENABLED if hasattr(settings, 'SCARFACE_LOGGING_ENABLED') else True
