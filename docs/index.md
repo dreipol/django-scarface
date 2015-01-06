@@ -85,15 +85,81 @@ For GCM it's the same approach. Just create an `GCMApplication`.
     
 
 ### Send Push Notifications
+
 Register a device like seen above.
+
 Send a push message:
+
     message = PushMessage(badge_count=1, context='url_alert', context_id='none',
                         has_new_content=True, message="Hello world!", sound="default")
     ios_device.send(message)
 
 If logging is enabled, all sent push messages are logged in the table scarface_pushmessage.
 
- 
+
+## Examples
+
+### Registration
+    def register(your_device_instance, token):
+        """
+        registers the device to sns
+        :param your_device_instance: the device
+        :param token: the push token or the registration id
+        """
+
+        # get the correct notification plattform
+        if your_device_instance.is_ios():
+            application_plattform = APNApplication()
+        else:
+            application_plattform = GCMApplication()
+
+        #register the application
+        application_plattform.register()
+
+        # create the device resource with the token (may be the push token or the registration id)
+        sns_device = SNSDevice(application_plattform, token)
+
+        # register the device with sns or update the token/the attributes
+        sns_device.register_or_update(new_token=token, custom_user_data="customer_name={0}".format(your_device_instance.customer_name))
+
+        # this is importat: after updating or registration, your sns resource should have a arn. save this to your database.
+        if sns_device.arn:
+            your_device_instance.arn = sns_device.arn
+            your_device_instance.save()
+
+### Send Push Notifications
+    def push(message, badge, targeted_devices):
+
+        """
+        sends a push to the targeted devices
+        :param message: the text message
+        :param badge: the new badge count (only applies to ios
+        """
+
+
+        # set up the application. in this scenario we can target both platforms
+        apns = APNApplication()
+        gcm = GCMApplication()
+
+        # for every targeted device...
+        for your_device_instance in targeted_devices:
+            # ...get the correct application
+            if your_device_instance.is_ios():
+                application_platform = apns
+            else:
+                application_platform = gcm
+
+            # and if your device model has a arn....
+            if your_device_instance.arn:
+
+                # ...create the device resource...
+                sns_device = SNSDevice(application_platform, your_device_instance.push_token, arn=your_device_instance.arn)
+                # ... and the push message...
+                message = PushMessage(badge_count=badge, context='push', context_id='none', has_new_content=True,
+                                      message=message, sound="default")
+                # ...and then send it.
+                sns_device.send(message)
+
 Now have fun using this library and [push it to the limit](https://www.youtube.com/watch?v=9D-QD_HIfjA).
 
 ![the movie](scarface-movie.png)
