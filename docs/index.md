@@ -160,6 +160,12 @@ If logging is enabled, all sent push messages are logged in the table scarface_p
                 # ...and then send it.
                 sns_device.send(message)
 
+##FAQ
+
+_How do I change the credentials?_
+
+There is no direct way yet to exchange the credentials. To exchange the API credentials you'll have to replace the old one in the settings file and in the AWS console manually. 
+
 Now have fun using this library and [push it to the limit](https://www.youtube.com/watch?v=9D-QD_HIfjA).
 
 ![the movie](scarface-movie.png)
