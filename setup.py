@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-scarface',
-    version='1.0.1',
+    version='1.0.2',
     packages=['scarface'],
     include_package_data=True,
     license='MIT License',
@@ -23,7 +23,7 @@ setup(
         'Environment :: Web Environment',
         'Framework :: Django',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License', 
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',

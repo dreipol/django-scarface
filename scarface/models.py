@@ -389,10 +389,10 @@ class PushMessage(models.Model):
     MESSAGE_TYPE_DEFAULT = 0
     MESSAGE_TYPE_TOPIC = 1
     sound = models.TextField(blank=True, null=True)
-    message = models.TextField(default='')
+    message = models.TextField(default='', null=True)
     has_new_content = models.BooleanField(default=False)
-    context_id = models.TextField(default='none')
-    context = models.TextField(default='default')
+    context_id = models.TextField(default='none', null=True)
+    context = models.TextField(default='default', null=True)
     badge_count = models.SmallIntegerField(default=0)
     extra_payload = models.TextField(blank=True, null=True)
     receiver_arn = models.TextField(blank=True, null=True)
