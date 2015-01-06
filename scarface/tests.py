@@ -4,12 +4,12 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
-from StringIO import StringIO
 from boto.exception import BotoServerError
 from django.test import TestCase
 from django.test.utils import override_settings
-from models import APNApplication, GCMApplication, Topic, SNSDevice, PushMessage
-from utils import get_sns_connection, DefaultConnection, APP_PREFIX
+from six import StringIO
+from .models import APNApplication, GCMApplication, Topic, SNSDevice, PushMessage
+from .utils import get_sns_connection, DefaultConnection, APP_PREFIX
 from django.core.management import call_command
 
 
@@ -129,7 +129,7 @@ class SNSAppManagement(TestCase):
         gcm_devices = gcm_device.platform.all_devices()
         apn_devices = apn_device.platform.all_devices()
         gcm_devices.extend(apn_devices)
-        self.assertEquals(len(subscriptions), len(gcm_devices))
+        self.assertEqual(len(subscriptions), len(gcm_devices))
 
     def test_send_to_topic(self):
         created, apn_device = self.create_apn_device()

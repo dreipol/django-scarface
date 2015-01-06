@@ -9,7 +9,7 @@ import subprocess
 import re
 
 regex = re.compile(
-    ur'(?P<cert>-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----).*(?P<key>-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----)',
+    u'(?P<cert>-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----).*(?P<key>-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----)',
     re.IGNORECASE | re.MULTILINE | re.UNICODE | re.DOTALL)
 
 
@@ -40,10 +40,10 @@ class Command(BaseCommand):
         if not os.path.isfile(file_name):
             raise CommandError(u'File "%s" does not exist'.format(file_name))
         arguments = "openssl pkcs12 -nodes -in {file} -passin pass:\"{pw}\"".format(file=file_name, pw=password)
-        result = subprocess.check_output(arguments, shell=True)
-        match = re.search(regex, result)
-        cert_string = match.group("cert").replace("\n", "\\n")
-        key_string = match.group("key").replace("\n", "\\n")
+        result = subprocess.check_output(arguments, shell=True).decode(encoding='utf-8')
+        groups = re.search(regex, result).groupdict()
+        cert_string = groups["cert"].replace("\n", "\\n")
+        key_string = groups["key"].replace("\n", "\\n")
         self.stdout.write("Copy the following two lines to your settings file:\n\n")
         self.stdout.write("SCARFACE_APNS_CERTIFICATE=\"{0}\"".format(cert_string))
         self.stdout.write("SCARFACE_APNS_PRIVATE_KEY=\"{0}\"".format(key_string))

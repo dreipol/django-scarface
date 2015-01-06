@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractproperty, abstractmethod
 import json
 from django.conf import settings
-from utils import DefaultConnection, PushLogger, APP_PREFIX
+from .utils import DefaultConnection, PushLogger, APP_PREFIX
 from django.db import models
 
 

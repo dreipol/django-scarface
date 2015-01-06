@@ -1,4 +1,4 @@
-from local import *
+from .local import *
 from os.path import join
 
 SOUTH_TESTS_MIGRATE = False
