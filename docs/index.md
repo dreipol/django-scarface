@@ -25,7 +25,7 @@ fall back to South on older versions, however you will also need the following s
 
 	SOUTH_MIGRATION_MODULES = {"scarface": "scarface.migrations"}
 
-Add your AWS credentials andthe required settings for Apple Push Notifications and/or Google Cloud Messaging as documented in the [Settings Chapter](#settings).
+Add your AWS credentials and the required settings for Apple Push Notifications and/or Google Cloud Messaging as documented in the [Settings Chapter](#settings).
 
 
 ## Settings
@@ -53,6 +53,9 @@ The APNS certificate and private key as a string. you can create this settings b
     SCARFACE_APNS_CERTIFICATE = "<YOUR-APNS-CERTIFICATE-KEY>"
     SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"
 
+Enable/Disable Push message logging 
+    
+    SCARFACE_LOGGING_ENABLED = True (Default)
 
 ## Management Commands
 ### extract_keys
@@ -63,11 +66,34 @@ You can extract the SCARFACE_APNS_CERTIFICATE and SCARFACE_APNS_PRIVATE_KEY sett
 The output can be copied and pasted into your settings file.
 
 ## Usage
+The code it self is good documented. You may also check the unittests (`tests.py`) or implementation details.
+
 ### Devices Registration
+Create and register the app:
+    
+    apn_app = APNApplication()
+    apn_app.register()
+
+Create and register the device:
+
+    push_token = "<iOS PushToken>"
+    ios_device = SNSDevice(apn_app, push_token)
+    ios_device.register_or_update()
+
+For GCM it's the same approach. Just create an `GCMApplication`.
+
+    
+
 ### Send Push Notifications
+Register a device like seen above.
+Send a push message:
+    message = PushMessage(badge_count=1, context='url_alert', context_id='none',
+                        has_new_content=True, message="Hello world!", sound="default")
+    ios_device.send(message)
 
+If logging is enabled, all sent push messages are logged in the table scarface_pushmessage.
 
-
+ 
 Now have fun using this library and [push it to the limit](https://www.youtube.com/watch?v=9D-QD_HIfjA).
 
 ![the movie](scarface-movie.png)
