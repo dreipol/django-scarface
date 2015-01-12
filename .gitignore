@@ -64,3 +64,4 @@ target/
 .AppleDouble
 .LSOverride
 Icon
+django_scarface/settings/local.py
