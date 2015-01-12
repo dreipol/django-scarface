@@ -101,6 +101,8 @@ If logging is enabled, all sent push messages are logged in the table scarface_p
 
 ### Registration
     def register(your_device_instance, token):
+        from scarface.models import SNSDevice, APNApplication, GCMApplication
+
         """
         registers the device to sns
         :param your_device_instance: the device
@@ -129,7 +131,7 @@ If logging is enabled, all sent push messages are logged in the table scarface_p
 
 ### Send Push Notifications
     def push(message, badge, targeted_devices):
-
+        from scarface.models import SNSDevice, APNApplication, GCMApplication, PushMessage
         """
         sends a push to the targeted devices
         :param message: the text message
