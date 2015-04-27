@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractproperty, abstractmethod
 import json
+from boto.exception import BotoServerError
 from django.conf import settings
+import re
 from .utils import DefaultConnection, PushLogger, APP_PREFIX
 from django.db import models
 
@@ -99,7 +101,16 @@ class SNSDevice(SNSCRUDMixin):
         if self.is_registered:
             result = self.update(new_token, custom_user_data, connection)
         else:
-            result = self.register(custom_user_data, connection)
+            try:
+                result = self.register(custom_user_data, connection)
+            #    Heavily inspired by http://stackoverflow.com/a/28316993/270265
+            except BotoServerError as err:
+                result_re = re.compile(r'Endpoint(.*)already', re.IGNORECASE)
+                result = result_re.search(err.message)
+                if result:
+                    arn = result.group(0).replace('Endpoint ','').replace(' already','')
+                    self.arn = arn
+                    self.update(new_token, custom_user_data, connection)
         return result
 
     @DefaultConnection
