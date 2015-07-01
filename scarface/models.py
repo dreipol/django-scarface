@@ -10,10 +10,10 @@ from django.db import models
 class SNSCRUDMixin(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, resource_name):
+    def __init__(self, resource_name, arn=None):
         super(SNSCRUDMixin, self).__init__()
         self.resource_name = resource_name
-        self.arn = None
+        self.arn = arn
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -74,11 +74,10 @@ class SNSDevice(SNSCRUDMixin):
         :param token:
         :return:
         """
-        super(SNSDevice, self).__init__("PlatformEndpoint")
+        super(SNSDevice, self).__init__("PlatformEndpoint", arn)
         self.token = token
         self.platform = platform
         self.is_enabled = is_enabled
-        self.arn = arn
 
     @property
     def arn_key(self):
@@ -103,12 +102,12 @@ class SNSDevice(SNSCRUDMixin):
         else:
             try:
                 result = self.register(custom_user_data, connection)
-            #    Heavily inspired by http://stackoverflow.com/a/28316993/270265
+            # Heavily inspired by http://stackoverflow.com/a/28316993/270265
             except BotoServerError as err:
                 result_re = re.compile(r'Endpoint(.*)already', re.IGNORECASE)
                 result = result_re.search(err.message)
                 if result:
-                    arn = result.group(0).replace('Endpoint ','').replace(' already','')
+                    arn = result.group(0).replace('Endpoint ', '').replace(' already', '')
                     self.arn = arn
                     self.update(new_token, custom_user_data, connection)
                 else:
@@ -145,7 +144,6 @@ class SNSDevice(SNSCRUDMixin):
         push_message = self.platform.format_payload(push_message)
         json_string = json.dumps(push_message)
         return connection.publish(message=json_string, target_arn=self.arn, message_structure="json")
-
 
     @DefaultConnection
     def update(self, new_token=None, custom_user_data=u"", connection=None):
@@ -186,10 +184,14 @@ class SNSDevice(SNSCRUDMixin):
 class SNSPlatformApplication(SNSCRUDMixin):
     __metaclass__ = ABCMeta
 
-    def __init__(self, app_name=APP_PREFIX):
-        super(SNSPlatformApplication, self).__init__("PlatformApplication")
+    def __init__(self, app_name=APP_PREFIX, arn=None):
+        super(SNSPlatformApplication, self).__init__("PlatformApplication", arn)
         self.app_name = app_name
         self._app_topic = None
+        if not self.arn:
+            arn_key = "SCARFACE_{platform}_ARN".format(self.platform)
+            if hasattr(settings, arn_key):
+                self.arn = getattr(settings, arn_key)
 
     @property
     def name(self):
@@ -223,7 +225,7 @@ class SNSPlatformApplication(SNSCRUDMixin):
     def attributes(self):
         return {"PlatformCredential": self.credential,
                 "PlatformPrincipal": self.principal
-        }
+                }
 
     @DefaultConnection
     def register(self, connection=None):
@@ -326,8 +328,8 @@ class GCMApplication(SNSPlatformApplication):
 
 
 class Topic(SNSCRUDMixin):
-    def __init__(self, name):
-        super(Topic, self).__init__("Topic")
+    def __init__(self, name, arn=None):
+        super(Topic, self).__init__("Topic", arn)
         self.name = name
 
     @DefaultConnection
