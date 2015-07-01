@@ -189,7 +189,7 @@ class SNSPlatformApplication(SNSCRUDMixin):
         self.app_name = app_name
         self._app_topic = None
         if not self.arn:
-            arn_key = "SCARFACE_{platform}_ARN".format(self.platform)
+            arn_key = "SCARFACE_{0}_ARN".format(self.platform)
             if hasattr(settings, arn_key):
                 self.arn = getattr(settings, arn_key)
 
