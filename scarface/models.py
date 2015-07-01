@@ -111,6 +111,11 @@ class SNSDevice(SNSCRUDMixin):
                     arn = result.group(0).replace('Endpoint ','').replace(' already','')
                     self.arn = arn
                     self.update(new_token, custom_user_data, connection)
+                else:
+                    sns_exc = SNSNotCreatedException(err)
+                    sns_exc.message = err.message
+                    raise sns_exc
+
         return result
 
     @DefaultConnection
