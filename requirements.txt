@@ -1,5 +1,4 @@
-Django==1.6.9
-South==1.0.2
+Django==1.8
 psycopg2==2.5.4
 django-jenkins==0.16.4
 pylint==1.4.0
