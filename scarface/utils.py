@@ -1,8 +1,8 @@
 __author__ = 'dreipol GmbH'
-from django.conf import settings
 from boto import sns
 from functools import partial
 import inspect
+from django.conf import settings
 
 
 class Decorator(object):

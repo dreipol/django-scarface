@@ -4,167 +4,465 @@ when you run "manage.py test".
 
 Replace this with more appropriate tests for your application.
 """
-from boto.exception import BotoServerError
-from django.test import TestCase
-from django.test.utils import override_settings
+from unittest.mock import Mock, MagicMock
 from six import StringIO
-from .models import APNApplication, GCMApplication, Topic, SNSDevice, PushMessage
-from .utils import get_sns_connection, DefaultConnection, APP_PREFIX
+from django.test import TestCase
 from django.core.management import call_command
+from scarface.exceptions import PlatformNotSupported
+from .models import Application, Platform, Topic, Device, IOS, \
+    ANDROID, Subscription
+from .utils import get_sns_connection, DefaultConnection
+
+TEST_ARN_TOKEN = 'test_arn_token'
+TEST_PUSH_TOKEN = 'test_push_token'
+TEST_IOS_DEVICE_ID = 'test_ios_device_id'
+TEST_ANDROID_DEVICE_ID = 'test_android_device_id'
+TEST_DEVICE_ID = 'test_device_id'
+TEST_CREDENTIAL = 'test_credential'
+TEST_PRINCIPAL = 'test_principal'
+TEST_ARN_TOKEN_GCM = 'test_arn_token_gcm'
+TEST_ARN_TOKEN_APNS = 'test_arn_token_apns'
+TEST_ARN_TOKEN_IOS_DEVICE = 'test_arn_ios_device'
+TEST_ARN_TOKEN_ANDROID_DEVICE = 'test_arn_android_device'
+TEST_ARN_TOKEN_TOPIC = 'test_topic_arn'
+TEST_ARN_TOKEN_SUBSCRIPTION = 'test_token_subscription'
+TEST_ARN_TOKEN_PLATFORM = 'test_arn_token_platform'
+TEST_TOPIC_NAME = 'test_topic_name'
 
 
 class SNSAppManagement(TestCase):
     def setUp(self):
-        self.app_name = APP_PREFIX
-        self.resources = list()
-        self.gcm_token = "APA91bEUOyAVwExNEL1HPbWRq1lNKWGm5v4agR0idJYghHshF59MTZ9zOYiIeJCL0zu2_m5vPxEwieR3gOih225kI42MO-Np239-L1QLxrOfSLJtzfQf7oI_SnO_ekmM6kPCcMPUlx5xQ6LU3vEZKhy-GpaQTgFfCA"
-        self.apn_token = "40e2aca271e95cd974873d62bc7360c3e0b94e66194b350ad0b9cba4ed6ddcdb"
+        pass
+
+    def tearDown(self):
+        pass
+
+    @property
+    def application(self):
+        return Application.objects.create(
+            name='test_application'
+        )
+
+    def get_apns_platform(self, application):
+        return Platform.objects.create(
+            platform='APNS',
+            application=application,
+            credential=TEST_CREDENTIAL,
+            principal=TEST_PRINCIPAL,
+            arn=TEST_ARN_TOKEN_APNS
+        )
+
+    def get_gcm_platform(self, application):
+        return Platform.objects.create(
+            platform='GCM',
+            application=application,
+            credential=TEST_CREDENTIAL,
+            principal=TEST_PRINCIPAL,
+            arn=TEST_ARN_TOKEN_GCM
+        )
+
+    def get_ios_device(self, application):
+        return Device.objects.create(
+            device_id=TEST_IOS_DEVICE_ID,
+            application=application,
+            push_token=TEST_PUSH_TOKEN,
+            os=IOS,
+            arn=TEST_ARN_TOKEN_IOS_DEVICE
+        )
+
+    def get_android_device(self, application):
+        return Device.objects.create(
+            device_id=TEST_ANDROID_DEVICE_ID,
+            application=application,
+            push_token=TEST_PUSH_TOKEN,
+            os=ANDROID
+        )
+
+    def get_topic(self, application):
+        return Topic.objects.create(
+            name=TEST_TOPIC_NAME,
+            application=application,
+            arn=TEST_ARN_TOKEN_TOPIC,
+        )
 
     @property
     def topic_name(self):
         return self.app_name + "topic"
 
-    def tearDown(self):
-        gcm_application = GCMApplication(self.app_name)
-        gcm_application.register()
-        self.resources.extend(gcm_application.all_devices())
-        self.resources.append(gcm_application)
-        for resource in self.resources:
-            resource.delete()
+    def test_register_arn_platform(self):
+        PLATFORM = 'APNS'
+        application = self.application
 
-    def platform_test(self, platform):
-        result = platform.register()
-        self.resources.append(platform)
-        return result
+        connection = Mock()
+        platform = Platform.objects.create(
+            platform=PLATFORM,
+            application=application,
+            credential=TEST_CREDENTIAL,
+            principal=TEST_PRINCIPAL,
+        )
 
-    def create_apn_device(self):
-        app = APNApplication(self.app_name)
-        app.register()
-        device = SNSDevice(app, self.apn_token)
-        created = device.register()
-        self.resources.append(device)
-        return created, device
+        connection.create_platform_application.return_value = {
+            'CreatePlatformApplicationResponse': {
+                'CreatePlatformApplicationResult': {
+                    'PlatformApplicationArn': TEST_ARN_TOKEN_PLATFORM
+                }
+            }
+        }
 
-    def create_gcm_device(self):
-        gcm_application = GCMApplication(self.app_name)
-        gcm_application.register()
-        device = SNSDevice(gcm_application, self.gcm_token)
-        created = device.register()
-        self.resources.append(device)
-        return created, device
+        platform.register(connection)
+        platform.save()
 
-    def test_add_apn(self):
-        """
-        Test adding APN app
-        """
-        apn_platform = APNApplication(self.app_name)
-        result = self.platform_test(apn_platform)
-        self.assertTrue(result)
+        self.assertEqual(TEST_ARN_TOKEN_PLATFORM, platform.arn)
+        connection.create_platform_application.assert_called_once_with(
+            "{0}_{1}".format(application.name, PLATFORM).lower(),
+            PLATFORM,
+            {
+                'PlatformCredential': TEST_CREDENTIAL,
+                'PlatformPrincipal': TEST_PRINCIPAL
+            }
+        )
 
-    def test_add_gcm(self):
-        result = self.platform_test(GCMApplication(self.app_name))
-        self.assertTrue(result)
+    def test_register_gcm_platform(self):
+        PLATFORM = 'GCM'
+        application = self.application
+        platform = Platform.objects.create(
+            platform=PLATFORM,
+            application=application,
+            credential=TEST_CREDENTIAL,
+        )
 
-    def test_delete_gcm(self):
-        gcm_application = GCMApplication(self.app_name)
-        gcm_application.register()
-        result = gcm_application.delete()
-        self.assertTrue(result)
+        connection = Mock()
+        connection.create_platform_application.return_value = {
+            'CreatePlatformApplicationResponse': {
+                'CreatePlatformApplicationResult': {
+                    'PlatformApplicationArn': TEST_ARN_TOKEN_PLATFORM
+                }
+            }
+        }
 
-    def test_delete_does_not_exist(self):
-        gcm_application = GCMApplication('test_no_app')
-        gcm_application.arn = 'arn:test_no_app'
-        self.assertRaises(BotoServerError, gcm_application.delete)
+        platform.register(connection)
+        platform.save()
 
-    def create_app_topic(self):
-        topic = Topic(self.topic_name)
-        success = topic.register()
-        self.resources.append(topic)
-        return success, topic
+        self.assertEqual(TEST_ARN_TOKEN_PLATFORM, platform.arn)
+        connection.create_platform_application.assert_called_once_with(
+            "{0}_{1}".format(application.name, PLATFORM).lower(),
+            PLATFORM,
+            {
+                'PlatformCredential': TEST_CREDENTIAL,
+                'PlatformPrincipal': None
+            }
+        )
 
-    def test_add_topic(self):
-        success, topic = self.create_app_topic()
-        self.assertTrue(topic)
+    def test_register_ios_device(self):
+        connection = Mock()
+        application = self.application
+        get_platform = Mock()
+        get_platform.return_value = self.get_apns_platform(application)
+        application.platform_for_device = get_platform
 
-    def test_delete_topic(self):
-        topic = Topic(self.topic_name)
-        topic.register()
-        result = topic.delete()
-        self.assertTrue(result)
+        connection.create_platform_endpoint.return_value = {
+            'CreatePlatformEndpointResponse': {
+                'CreatePlatformEndpointResult': {
+                    'EndpointArn': TEST_ARN_TOKEN_IOS_DEVICE
+                }
+            }
+        }
 
-    def test_add_gcm_device(self):
-        device = self.create_gcm_device()
-        self.assertTrue(device)
+        device = Device.objects.create(
+            device_id=TEST_DEVICE_ID,
+            application=application,
+            push_token=TEST_PUSH_TOKEN,
+            os=IOS
+        )
 
-    def test_add_apn_device(self):
-        created, device = self.create_apn_device()
-        self.assertTrue(created)
+        device.register(connection=connection)
 
-    def test_list_devices(self):
-        gcm_application = GCMApplication(self.app_name)
-        gcm_application.register()
-        created, device = self.create_gcm_device()
-        devices = gcm_application.all_devices()
-        self.assertListEqual(devices, [device, ])
+        application.platform_for_device.assert_called_once_with(device)
+        connection.create_platform_endpoint.assert_called_once_with(
+            TEST_ARN_TOKEN_APNS,
+            TEST_PUSH_TOKEN,
+            custom_user_data="",
+        )
+        self.assertEqual(device.arn, TEST_ARN_TOKEN_IOS_DEVICE)
 
-    def test_send_gcm_push(self):
-        created, device = self.create_gcm_device()
-        success = device.send(
-            PushMessage(badge_count=1, context='url_alert', context_id='none',
-                        has_new_content=True, message="Hello world!", sound="default"))
-        self.assertEqual(PushMessage.objects.all().count(), 1)
+    def test_register_android_device(self):
+        connection = Mock()
+        application = self.application
+        get_platform = Mock()
+        get_platform.return_value = self.get_gcm_platform(application)
+        application.platform_for_device = get_platform
 
-    def test_send_apn_push(self):
-        created, device = self.create_apn_device()
-        message = PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
-                              message="Hello world!", sound="default")
-        device.send(message)
-        self.assertEqual(PushMessage.objects.all().count(), 1)
+        connection.create_platform_endpoint.return_value = {
+        'CreatePlatformEndpointResponse': {
+            'CreatePlatformEndpointResult': {
+                'EndpointArn': TEST_ARN_TOKEN_ANDROID_DEVICE
+            }
+        }
+    }
 
-    def test_add_to_app_topic(self):
-        created_apn, apn_device = self.create_apn_device()
-        created_gcm, gcm_device = self.create_gcm_device()
-        topic = gcm_device.platform.app_topic
-        subscriptions = topic.all_subscriptions()
-        gcm_devices = gcm_device.platform.all_devices()
-        apn_devices = apn_device.platform.all_devices()
-        gcm_devices.extend(apn_devices)
-        self.assertEqual(len(subscriptions), len(gcm_devices))
+        device = Device.objects.create(
+            device_id=TEST_DEVICE_ID,
+            application=application,
+            push_token=TEST_PUSH_TOKEN,
+            os=ANDROID
+        )
 
-    def test_send_to_topic(self):
-        created, apn_device = self.create_apn_device()
-        created_gcm, gcm_device = self.create_gcm_device()
-        topic = gcm_device.platform.app_topic
-        message = PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
-                              message="Hello Topic!", sound="default")
-        topic.send(message, platforms=[gcm_device.platform, apn_device.platform])
-        self.assertEqual(PushMessage.objects.all().count(), 1)
+        device.register(connection=connection)
 
-    def test_update_with_same_token(self):
-        created, device = self.create_apn_device()
-        device_updated = device.update(self.apn_token)
-        self.assertIsNotNone(device_updated)
+        application.platform_for_device.assert_called_once_with(device)
+        connection.create_platform_endpoint.assert_called_once_with(
+            TEST_ARN_TOKEN_GCM,
+            TEST_PUSH_TOKEN,
+            custom_user_data="",
+        )
 
-    def test_register_with_other_user_data(self):
-        created, device = self.create_apn_device()
-        self.assertRaises(BotoServerError, device.register, {"custom_user_data": "Hello world!"})
+    def test_register_topic(self):
+        application = self.application
 
-    def test_update_with_other_user_data(self):
-        created, device = self.create_apn_device()
-        result = device.update(custom_user_data="Hello world!")
-        self.assertIsNotNone(result)
+        topic = Topic.objects.create(
+            name=TEST_TOPIC_NAME,
+            application=application,
+        )
+        connection = Mock()
+        connection.create_topic.return_value = {
+            'CreateTopicResponse': {
+                'CreateTopicResult': {
+                    'TopicArn': TEST_ARN_TOKEN_TOPIC
+                }
+            }
+        }
 
-    def test_register_or_update(self):
-        created, device = self.create_apn_device()
-        result = device.register_or_update(custom_user_data="Hello world!")
-        self.assertIsNotNone(result)
+        topic.register(connection=connection)
 
-    @override_settings(SCARFACE_LOGGING_ENABLED=False)
-    def test_disable_logging(self):
-        created, device = self.create_gcm_device()
-        device.send(PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
-                              message="Hello Topic!", sound="default"))
-        self.assertEqual(0,PushMessage.objects.all().count())
+        self.assertEqual(topic.arn, TEST_ARN_TOKEN_TOPIC)
+        connection.create_topic.assert_called_once_with(TEST_TOPIC_NAME)
+
+    def test_platform_for_device(self):
+        app = self.application
+        device_ios = self.get_ios_device(app)
+        device_android = self.get_android_device(app)
+        exception = False
+
+        try:
+            app.platform_for_device(device_ios)
+        except PlatformNotSupported:
+            exception = True
+        self.assertTrue(exception)
+
+        exception = False
+        try:
+            app.platform_for_device(device_android)
+        except PlatformNotSupported:
+            exception = True
+        self.assertTrue(exception)
+
+        platform_apns = self.get_apns_platform(app)
+
+        exception = False
+        try:
+            app.platform_for_device(device_ios)
+        except PlatformNotSupported:
+            exception = True
+        self.assertFalse(exception)
+
+        exception = False
+        try:
+            app.platform_for_device(device_android)
+        except PlatformNotSupported:
+            exception = True
+        self.assertTrue(exception)
+
+        platform_apns = self.get_gcm_platform(app)
+
+        exception = False
+        try:
+            app.platform_for_device(device_ios)
+        except PlatformNotSupported:
+            exception = True
+        self.assertFalse(exception)
+
+        exception = False
+        try:
+            app.platform_for_device(device_android)
+        except PlatformNotSupported:
+            exception = True
+        self.assertFalse(exception)
+
+    def test_topic_register_device(self):
+        app = self.application
+        platform = self.get_apns_platform(app)
+        topic = self.get_topic(app)
+        device = self.get_ios_device(app)
+        connection = Mock()
+        connection.subscribe.return_value={
+            'SubscribeResponse': {
+                'SubscribeResult': {
+                    'SubscriptionArn': TEST_ARN_TOKEN_SUBSCRIPTION
+                }
+            }
+        }
+
+        topic.register_device(device, connection)
+
+        connection.subscribe.assert_called_once_with(
+            topic=TEST_ARN_TOKEN_TOPIC,
+            endpoint=TEST_ARN_TOKEN_IOS_DEVICE,
+            protocol='application'
+        )
+
+        try:
+            subscription = Subscription.objects.get(
+                device=device,
+                topic=topic
+            )
+            self.assertEqual(subscription.arn, TEST_ARN_TOKEN_SUBSCRIPTION)
+        except Subscription.DoesNotExist:
+            self.assertTrue(False)
+
+
+
+        # def tearDown(self):
+        # gcm_application = GCMApplication(self.app_name)
+        # gcm_application.register()
+        # self.resources.extend(gcm_application.all_devices())
+        # self.resources.append(gcm_application)
+        # for resource in self.resources:
+        #     resource.delete()
+
+        # def platform_test(self, platform):
+        #     result = platform.register()
+        #     self.resources.append(platform)
+        #     return result
+        #
+        # def create_apn_device(self):
+        #     app = APNApplication(self.app_name)
+        #     app.register()
+        #     device = SNSDevice(app, self.apn_token)
+        #     created = device.register()
+        #     self.resources.append(device)
+        #     return created, device
+        #
+        # def create_gcm_device(self):
+        #     gcm_application = GCMApplication(self.app_name)
+        #     gcm_application.register()
+        #     device = SNSDevice(gcm_application, self.gcm_token)
+        #     created = device.register()
+        #     self.resources.append(device)
+        #     return created, device
+        #
+        # def test_add_apn(self):
+        #     """
+        #     Test adding APN app
+        #     """
+        #     apn_platform = APNApplication(self.app_name)
+        #     result = self.platform_test(apn_platform)
+        #     self.assertTrue(result)
+        #
+        # def test_add_gcm(self):
+        #     result = self.platform_test(GCMApplication(self.app_name))
+        #     self.assertTrue(result)
+        #
+        # def test_delete_gcm(self):
+        #     gcm_application = GCMApplication(self.app_name)
+        #     gcm_application.register()
+        #     result = gcm_application.delete()
+        #     self.assertTrue(result)
+        #
+        # def test_delete_does_not_exist(self):
+        #     gcm_application = GCMApplication('test_no_app')
+        #     gcm_application.arn = 'arn:test_no_app'
+        #     self.assertRaises(BotoServerError, gcm_application.delete)
+        #
+        # def create_app_topic(self):
+        #     topic = Topic(self.topic_name)
+        #     success = topic.register()
+        #     self.resources.append(topic)
+        #     return success, topic
+        #
+        # def test_add_topic(self):
+        #     success, topic = self.create_app_topic()
+        #     self.assertTrue(topic)
+        #
+        # def test_delete_topic(self):
+        #     topic = Topic(self.topic_name)
+        #     topic.register()
+        #     result = topic.delete()
+        #     self.assertTrue(result)
+        #
+        # def test_add_gcm_device(self):
+        #     device = self.create_gcm_device()
+        #     self.assertTrue(device)
+        #
+        # def test_add_apn_device(self):
+        #     created, device = self.create_apn_device()
+        #     self.assertTrue(created)
+        #
+        # def test_list_devices(self):
+        #     gcm_application = GCMApplication(self.app_name)
+        #     gcm_application.register()
+        #     created, device = self.create_gcm_device()
+        #     devices = gcm_application.all_devices()
+        #     self.assertListEqual(devices, [device, ])
+        #
+        # def test_send_gcm_push(self):
+        #     created, device = self.create_gcm_device()
+        #     success = device.send(
+        #         PushMessage(badge_count=1, context='url_alert', context_id='none',
+        #                     has_new_content=True, message="Hello world!", sound="default"))
+        #     self.assertEqual(PushMessage.objects.all().count(), 1)
+        #
+        # def test_send_apn_push(self):
+        #     created, device = self.create_apn_device()
+        #     message = PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
+        #                           message="Hello world!", sound="default")
+        #     device.send(message)
+        #     self.assertEqual(PushMessage.objects.all().count(), 1)
+        #
+        # def test_add_to_app_topic(self):
+        #     created_apn, apn_device = self.create_apn_device()
+        #     created_gcm, gcm_device = self.create_gcm_device()
+        #     topic = gcm_device.platform.app_topic
+        #     subscriptions = topic.all_subscriptions()
+        #     gcm_devices = gcm_device.platform.all_devices()
+        #     apn_devices = apn_device.platform.all_devices()
+        #     gcm_devices.extend(apn_devices)
+        #     self.assertEqual(len(subscriptions), len(gcm_devices))
+        #
+        # def test_send_to_topic(self):
+        #     created, apn_device = self.create_apn_device()
+        #     created_gcm, gcm_device = self.create_gcm_device()
+        #     topic = gcm_device.platform.app_topic
+        #     message = PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
+        #                           message="Hello Topic!", sound="default")
+        #     topic.send(message, platforms=[gcm_device.platform, apn_device.platform])
+        #     self.assertEqual(PushMessage.objects.all().count(), 1)
+        #
+        # def test_update_with_same_token(self):
+        #     created, device = self.create_apn_device()
+        #     device_updated = device.update(self.apn_token)
+        #     self.assertIsNotNone(device_updated)
+        #
+        # def test_register_with_other_user_data(self):
+        #     created, device = self.create_apn_device()
+        #     self.assertRaises(BotoServerError, device.register, {"custom_user_data": "Hello world!"})
+        #
+        # def test_update_with_other_user_data(self):
+        #     created, device = self.create_apn_device()
+        #     result = device.update(custom_user_data="Hello world!")
+        #     self.assertIsNotNone(result)
+        #
+        # def test_register_or_update(self):
+        #     created, device = self.create_apn_device()
+        #     result = device.register_or_update(custom_user_data="Hello world!")
+        #     self.assertIsNotNone(result)
+        #
+        # @override_settings(SCARFACE_LOGGING_ENABLED=False)
+        # def test_disable_logging(self):
+        #     created, device = self.create_gcm_device()
+        #     device.send(PushMessage(badge_count=1, context='url_alert', context_id='none', has_new_content=True,
+        #                           message="Hello Topic!", sound="default"))
+        #     self.assertEqual(0,PushMessage.objects.all().count())
+
 
 class DefaultConnectionWrapperTestCase(TestCase):
     def test_wrapper_empty(self):
@@ -218,6 +516,7 @@ def connection_test(a=None, connection=None):
 class ExtractKeysCommand(TestCase):
     def test_command_output(self):
         out = StringIO()
-        call_command("extract_keys", file="local_push.p12", password="bazinga", stdout=out)
+        call_command("extract_keys", file="local_push.p12", password="bazinga",
+                     stdout=out)
         out_getvalue = out.getvalue()
         self.assertIn('SCARFACE_APNS_CERTIFICATE', out_getvalue)

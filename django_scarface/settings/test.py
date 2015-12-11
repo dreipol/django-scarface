@@ -1,4 +1,4 @@
-from .local import *
+from .base import *
 from os.path import join
 
 SOUTH_TESTS_MIGRATE = False
@@ -17,7 +17,6 @@ JENKINS_TASKS = (
     'django_jenkins.tasks.with_coverage',
     'django_jenkins.tasks.run_pep8',
     'django_jenkins.tasks.run_pylint',
-
 )
 
 PYLINT_RCFILE = join(SITE_ROOT, 'pylint.rc')

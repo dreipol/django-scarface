@@ -8,7 +8,7 @@ DJANGO_ROOT = dirname(abspath(__file__))
 SITE_ROOT = dirname(DJANGO_ROOT)
 SITE_NAME = basename(SITE_ROOT)
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -124,7 +124,6 @@ TEMPLATE_DIRS = (
 )
 
 DJANGO_APPS = (
-    'suit',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -206,3 +205,6 @@ AWS_BUCKET = "<YOUR-BUCKET-NAME>"
 SCARFACE_GCM_API_KEY = "<YOUR-GCM-API-KEY>"
 SCARFACE_APNS_CERTIFICATE = "<YOUR-APNS-CERTIFICATE-KEY>"
 SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"
+
+# def get_gcm_app():
+#     return ScarfaceApplication.get_or_create(name='')
