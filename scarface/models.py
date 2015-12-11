@@ -2,11 +2,9 @@ from abc import ABCMeta, abstractmethod
 import json
 from boto.exception import BotoServerError
 import re
-
 from django.db import models
 from .utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported
-
 
 AVAILABLE_PLATFORMS = {
     # 'ADM': 'Amazon Device Messaging (ADM)',
@@ -167,7 +165,7 @@ class Device(SNSCRUDMixin, models.Model):
             custom_user_data=custom_user_data
         )
         self.is_enabled = success = self.set_arn_from_response(response)
-        #TODO: What is the app topic ?
+        # TODO: What is the app topic ?
         # if self.is_registered:
         #     self.platform.app_topic.register_device(self)
         self.save()
@@ -294,9 +292,9 @@ class Platform(SNSCRUDMixin, models.Model):
 
     @property
     def strategy(self):
-        if self.platform in ['APN', 'APN_SANDBOX']:
+        if self.platform in ['APNS', 'APN_SANDBOX']:
             return APNPlatformStrategy(self)
-        elif self.platform in ['GCN']:
+        elif self.platform in ['GCM']:
             return GCMPlatformStrategy(self)
 
     @property
@@ -390,7 +388,7 @@ class Platform(SNSCRUDMixin, models.Model):
         return devices_list
 
     def format_payload(self, data):
-        self.strategy.format_payload(data)
+        return self.strategy.format_payload(data)
 
 
 class PlatformStrategy(metaclass=ABCMeta):
@@ -400,7 +398,6 @@ class PlatformStrategy(metaclass=ABCMeta):
 
     def format_payload(self, data):
         return {self.platform.platform: json.dumps(data)}
-        pass
 
 
 class APNPlatformStrategy(PlatformStrategy):
@@ -477,7 +474,11 @@ class Topic(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None):
         if not self.is_registered:
             raise SNSNotCreatedException
-        return connection.delete_topic(self.arn)
+        success = connection.delete_topic(self.arn)
+        if success:
+            self.arn = None
+            self.save()
+        return success
 
     @DefaultConnection
     def register_device(self, device, connection=None):
@@ -524,7 +525,7 @@ class Topic(SNSCRUDMixin, models.Model):
 
     @PushLogger
     @DefaultConnection
-    def send(self, push_message, platforms, connection=None):
+    def send(self, push_message, connection=None):
         """
 
         :type push_message: PushMessage
@@ -534,12 +535,15 @@ class Topic(SNSCRUDMixin, models.Model):
         :return:
         """
         payload = dict()
-        for platform in platforms:
+        for platform in self.application.platforms.all():
             payload.update(platform.format_payload(push_message))
         payload["default"] = push_message.message
         json_string = json.dumps(payload)
-        return connection.publish(message=json_string, topic=self.arn,
-                                  message_structure="json")
+        return connection.publish(
+            message=json_string,
+            topic=self.arn,
+            message_structure="json"
+        )
 
 
 class PushMessage(models.Model):
@@ -601,7 +605,6 @@ class Subscription(SNSCRUDMixin, models.Model):
     class Meta:
         unique_together = (('topic', 'device'))
 
-
     @property
     def response_key(self):
         return u'SubscribeResponse'
@@ -617,16 +620,18 @@ class Subscription(SNSCRUDMixin, models.Model):
     def register(self, connection=None):
         if not self.device.is_registered:
             success = self.device.register()
-            if not success:  return success
+            if not success:
+                return success
         if not self.topic.is_registered:
-           success = self.topic.register()
-           if not success:  return success
+            success = self.topic.register()
+            if not success:
+                return success
 
         success = connection.subscribe(
-                topic=self.topic.arn,
-                endpoint=self.device.arn,
-                protocol="application"
-            )
+            topic=self.topic.arn,
+            endpoint=self.device.arn,
+            protocol="application"
+        )
         self.set_arn_from_response(success)
         self.save()
 

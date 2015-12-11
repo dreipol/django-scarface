@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.core.management import call_command
 from scarface.exceptions import PlatformNotSupported
 from .models import Application, Platform, Topic, Device, IOS, \
-    ANDROID, Subscription
+    ANDROID, Subscription, PushMessage
 from .utils import get_sns_connection, DefaultConnection
 
 TEST_ARN_TOKEN = 'test_arn_token'
@@ -381,7 +381,7 @@ class DeviceTestCase(BaseTestCase):
 
 
 class TopicTestCase(BaseTestCase):
-    def test_register_topic(self):
+    def test_register(self):
         application = self.application
 
         topic = Topic.objects.create(
@@ -402,7 +402,23 @@ class TopicTestCase(BaseTestCase):
         self.assertEqual(topic.arn, TEST_ARN_TOKEN_TOPIC)
         connection.create_topic.assert_called_once_with(TEST_TOPIC_NAME)
 
-    def test_topic_register_device(self):
+    def test_deregister(self):
+        app = self.application
+        topic = Topic.objects.create(
+            name=TEST_TOPIC_NAME,
+            application = app,
+            arn=TEST_ARN_TOKEN_TOPIC
+        )
+
+        connection = Mock()
+        topic.deregister(connection)
+
+        connection.delete_topic.assert_called_once_with(
+            TEST_ARN_TOKEN_TOPIC
+        )
+        self.assertFalse(topic.is_registered)
+
+    def test_register_device(self):
         app = self.application
         platform = self.get_apns_platform(app)
         topic = self.get_topic(app)
@@ -433,7 +449,27 @@ class TopicTestCase(BaseTestCase):
         except Subscription.DoesNotExist:
             self.assertTrue(False)
 
+    def test_send(self):
+        MESSAGE = 'test_message'
+        app = self.application
+        platform_apns = self.get_apns_platform(app)
+        platform_gcm = self.get_gcm_platform(app)
+        topic = self.get_topic(app)
+        connection = Mock()
+        message = PushMessage.objects.create(
+            message=MESSAGE
+        )
 
+        topic.send(message, connection)
+
+        self.assertTrue(connection.publish.called)
+
+
+
+
+
+def dummy():
+    pass
 # def tearDown(self):
 # gcm_application = GCMApplication(self.app_name)
 # gcm_application.register()
@@ -621,9 +657,9 @@ class TopicTestCase(BaseTestCase):
 #         self.assertEqual(a_input, a)
 
 
-@DefaultConnection
-def connection_test(a=None, connection=None):
-    return a, connection
+# @DefaultConnection
+# def connection_test(a=None, connection=None):
+#     return a, connection
 
 
     # class ExtractKeysCommand(TestCase):
