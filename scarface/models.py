@@ -156,7 +156,7 @@ class Device(SNSCRUDMixin, models.Model):
         return self._platform
 
     @DefaultConnection
-    def register(self, custom_user_data=u"", connection=None):
+    def register(self, custom_user_data='', connection=None):
         if not self.platform.is_registered:
             success = self.platform.register(connection)
             if not success:
@@ -207,7 +207,11 @@ class Device(SNSCRUDMixin, models.Model):
         if not self.is_registered:
             raise SNSNotCreatedException
         # ToDo: Delete from topics as well
-        return connection.delete_endpoint(self.arn)
+        success = connection.delete_endpoint(self.arn)
+        if success:
+            self.arn = None
+            self.save()
+        return success
 
     @DefaultConnection
     def send_message(self, message, connection=None):
@@ -237,32 +241,18 @@ class Device(SNSCRUDMixin, models.Model):
         :return:
         """
 
-        new_token = new_token if new_token else self.token
+        new_token = new_token if new_token else self.push_token
         attributes = {"Enabled": True, "Token": new_token}
         if custom_user_data:
             attributes["CustomUserData"] = custom_user_data
         answer = connection.set_endpoint_attributes(self.arn, attributes)
         self.is_enabled = True
-        self.token = new_token
+        self.push_token = new_token
         return answer
 
     def sign(self, push_message):
         push_message.receiver_arn = self.arn
         push_message.message_type = PushMessage.MESSAGE_TYPE_TOPIC
-
-    @classmethod
-    def create_from_endpoints(cls, platform, endpoints):
-        devices = list()
-        for endpoint in endpoints:
-            attributes = endpoint[u'Attributes']
-            token = attributes[u'Token']
-            is_enabled = attributes[u"Enabled"].lower() == u'true'
-            arn = endpoint[u'EndpointArn']
-            device = cls(platform, token)
-            device.arn = arn
-            device.is_enabled = is_enabled
-            devices.append(device)
-        return devices
 
 
 class Platform(SNSCRUDMixin, models.Model):
@@ -359,11 +349,22 @@ class Platform(SNSCRUDMixin, models.Model):
         """
         if not self.is_registered:
             raise SNSNotCreatedException
-        return connection.delete_platform_application(self.arn)
+        success = connection.delete_platform_application(self.arn)
+        if success:
+            self.arn = None
+            self.save()
+        return success
 
     @DefaultConnection
     def all_devices(self, connection=None):
-        devices_list = list()
+        """
+        Returns all devices which are registred with this
+        platform.
+
+        :param connection:
+        :return: List of Devices associated with this platform
+        """
+        endpoint_arns = list()
 
         def get_next(nexttoken):
             response = connection.list_endpoints_by_platform_application(
@@ -371,14 +372,20 @@ class Platform(SNSCRUDMixin, models.Model):
                 next_token=nexttoken)
             result = response[u'ListEndpointsByPlatformApplicationResponse'][
                 u'ListEndpointsByPlatformApplicationResult']
-            devices = result[u'Endpoints']
-            devices_list.extend(Device.create_from_endpoints(self, devices))
+            endpoints = result[u'Endpoints']
+            for endpoint in endpoints:
+                endpoint_arns.append(
+                    endpoint['EndpointArn']
+                )
+
             return result[u'NextToken']
 
         next_token = get_next(None)
 
         while next_token:
             next_token = get_next(next_token)
+
+        devices_list = list(Device.objects.filter(arn__in=endpoint_arns))
 
         return devices_list
 
