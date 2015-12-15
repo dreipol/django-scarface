@@ -290,7 +290,7 @@ class Platform(SNSCRUDMixin, models.Model):
     )
 
     def __str__(self):
-        return "{0} ({1})".format([self.platform, self.application])
+        return "{0} ({1})".format(self.platform, self.application)
 
     class Meta:
         unique_together = ('application', 'platform')
