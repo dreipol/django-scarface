@@ -161,6 +161,7 @@ class Device(SNSCRUDMixin, models.Model):
             self._platform = self.application.platform_for_device(self)
         return self._platform
 
+    @DefaultConnection
     def delete(self, using=None, connection=None):
         if not self.deregister(connection):
             logger.warn("Could not unregister device on delete.")
@@ -490,6 +491,7 @@ class Topic(SNSCRUDMixin, models.Model):
     def full_name(self):
         return '_'.join([self.application.name, self.name])
 
+    @DefaultConnection
     def delete(self, using=None, connection=None):
         if not self.deregister(connection):
             logger.warn("Could not unregister topic on delete.")
@@ -498,7 +500,8 @@ class Topic(SNSCRUDMixin, models.Model):
     @DefaultConnection
     def register(self, connection=None):
         response = connection.create_topic(self.full_name)
-        return self.set_arn_from_response(response)
+        self.set_arn_from_response(response)
+        self.save()
 
     @DefaultConnection
     def deregister(self, connection=None):
