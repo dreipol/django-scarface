@@ -589,13 +589,11 @@ class PushMessage(models.Model):
 class Subscription(SNSCRUDMixin, models.Model):
     topic = models.ForeignKey(
         to=Topic,
-        # related_name='subscriptions'
         on_delete=models.CASCADE
     )
 
     device = models.ForeignKey(
         to=Device,
-        # related_name='subscriptions'
         on_delete=models.CASCADE
     )
 
