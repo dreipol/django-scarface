@@ -10,6 +10,10 @@ class PlatformInline(admin.TabularInline):
 
 class ApplicationAdmin(admin.ModelAdmin):
     inlines = [PlatformInline]
+    list_display = ['name', 'application', 'arn']
+
+class PlatformAdmin(admin.ModelAdmin):
+    list_display = ['platform', 'application', 'arn']
 
 admin.site.register(Application)
 admin.site.register(Platform)

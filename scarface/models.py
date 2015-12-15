@@ -76,6 +76,9 @@ class Application(models.Model):
         unique=True
     )
 
+    def __str__(self):
+        return self.name
+
     def get_device(self, device_id):
         return self.devices.filter(udid=device_id)
 
@@ -285,6 +288,9 @@ class Platform(SNSCRUDMixin, models.Model):
         blank=True,
         null=True
     )
+
+    def __str__(self):
+        return "{0} ({1})".format([self.platform, self.application])
 
     class Meta:
         unique_together = ('application', 'platform')

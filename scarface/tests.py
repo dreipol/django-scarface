@@ -389,6 +389,15 @@ class TopicTestCase(BaseTestCase):
             name=TEST_TOPIC_NAME,
             application=application,
         )
+        topic.delete()
+
+    def test_register(self):
+        application = self.application
+
+        topic = Topic.objects.create(
+            name=TEST_TOPIC_NAME,
+            application=application,
+        )
         connection = Mock()
         connection.create_topic.return_value = {
             'CreateTopicResponse': {
