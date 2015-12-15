@@ -22,20 +22,6 @@ OS = {
 
 
 class SNSCRUDMixin(object):
-    __metaclass__ = ABCMeta
-
-    # def __init__(self, resource_name, arn=None):
-    #     super(SNSCRUDMixin, self).__init__()
-    #     self.resource_name = resource_name
-    #     self.arn = arn
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.arn == other.arn
-        return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     @property
     def resource_name(self):
@@ -134,6 +120,11 @@ class Device(SNSCRUDMixin, models.Model):
 
     os = models.SmallIntegerField(
         choices=OS.items()
+    )
+
+    topics = models.ManyToManyField(
+        to='Topic',
+        through='Subscription'
     )
 
     class Meta:
@@ -497,7 +488,17 @@ class Topic(SNSCRUDMixin, models.Model):
             topic=self,
         )
         success = subscription.register(connection)
+        subscription.save()
         return success
+
+    @DefaultConnection
+    def deregister_device(self, device, connection=None):
+        subscription = Subscription.objects.get(
+            device=device,
+            topic=self
+        )
+        subscription.deregister(connection)
+        subscription.delete()
 
     @DefaultConnection
     def all_subscriptions(self, connection=None):
@@ -589,11 +590,13 @@ class Subscription(SNSCRUDMixin, models.Model):
     topic = models.ForeignKey(
         to=Topic,
         # related_name='subscriptions'
+        on_delete=models.CASCADE
     )
 
     device = models.ForeignKey(
         to=Device,
         # related_name='subscriptions'
+        on_delete=models.CASCADE
     )
 
     arn = models.CharField(

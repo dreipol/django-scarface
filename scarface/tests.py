@@ -449,6 +449,40 @@ class TopicTestCase(BaseTestCase):
         except Subscription.DoesNotExist:
             self.assertTrue(False)
 
+    def test_deregister_device(self):
+        app = self.application
+        platform = self.get_apns_platform(app)
+        topic = self.get_topic(app)
+        device = self.get_ios_device(app)
+        connection = Mock()
+        connection.subscribe.return_value = {
+            'SubscribeResponse': {
+                'SubscribeResult': {
+                    'SubscriptionArn': TEST_ARN_TOKEN_SUBSCRIPTION
+                }
+            }
+        }
+        topic.register_device(device, connection)
+        subscription_arn = Subscription.objects.get(
+            device=device,
+            topic=topic
+        ).arn
+
+        topic.deregister_device(device, connection)
+
+        connection.unsubscribe.assert_called_once_with(
+            subscription_arn
+        )
+        try:
+            subscription = Subscription.objects.get(
+                device=device,
+                topic=topic
+            )
+            self.assertTrue(False)
+        except Subscription.DoesNotExist:
+            pass
+
+
     def test_send(self):
         MESSAGE = 'test_message'
         app = self.application
@@ -466,10 +500,7 @@ class TopicTestCase(BaseTestCase):
 
 
 
-
-
-def dummy():
-    pass
+pass
 # def tearDown(self):
 # gcm_application = GCMApplication(self.app_name)
 # gcm_application.register()
