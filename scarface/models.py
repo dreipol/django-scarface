@@ -468,9 +468,13 @@ class Topic(SNSCRUDMixin, models.Model):
     def resource_name(self):
         return 'Topic'
 
+    @property
+    def full_name(self):
+        return '_'.join([self.application.name, self.name])
+
     @DefaultConnection
     def register(self, connection=None):
-        response = connection.create_topic(self.name)
+        response = connection.create_topic(self.full_name)
         return self.set_arn_from_response(response)
 
     @DefaultConnection

@@ -29,6 +29,7 @@ TEST_ARN_TOKEN_SUBSCRIPTION = 'test_token_subscription'
 TEST_ARN_TOKEN_PLATFORM = 'test_arn_token_platform'
 TEST_TOPIC_NAME = 'test_topic_name'
 TEST_MESSAGE = 'test_message'
+TEST_APPLICATION_NAME = 'test_applicaiton'
 
 
 class BaseTestCase(TestCase):
@@ -41,7 +42,7 @@ class BaseTestCase(TestCase):
     @property
     def application(self):
         return Application.objects.create(
-            name='test_application'
+            name=TEST_APPLICATION_NAME
         )
 
     def get_apns_platform(self, application):
@@ -400,7 +401,9 @@ class TopicTestCase(BaseTestCase):
         topic.register(connection=connection)
 
         self.assertEqual(topic.arn, TEST_ARN_TOKEN_TOPIC)
-        connection.create_topic.assert_called_once_with(TEST_TOPIC_NAME)
+        connection.create_topic.assert_called_once_with(
+            '_'.join([TEST_APPLICATION_NAME, TEST_TOPIC_NAME])
+        )
 
     def test_deregister(self):
         app = self.application
