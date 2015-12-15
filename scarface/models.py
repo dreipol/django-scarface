@@ -82,6 +82,18 @@ class Application(models.Model):
     def get_topic(self, name):
         return self.topics.get(name=name)
 
+    def get_or_create_topic(self, name):
+        try:
+            return self.topics.get(name=name), False
+        except Topic.DoesNotExist:
+            topic = Topic.objects.create(
+                application=self,
+                name=name
+            )
+            topic.register()
+            topic.save()
+            return topic, True
+
     def platform_for_device(self, device):
         platform = None
         if device.os is IOS:
