@@ -122,7 +122,6 @@ class Device(SNSCRUDMixin, models.Model):
 
     application = models.ForeignKey(
         to=Application,
-        on_delete=None,
         related_name='devices'
     )
 
@@ -281,7 +280,6 @@ class Platform(SNSCRUDMixin, models.Model):
 
     application = models.ForeignKey(
         to=Application,
-        on_delete=None,
         related_name='platforms'
     )
 
