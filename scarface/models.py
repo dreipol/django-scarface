@@ -44,7 +44,7 @@ class SNSCRUDMixin(object):
 
     @property
     def is_registered(self):
-        return self.arn is not None
+        return self.arn and len(self.arn) > 0
 
     def set_arn_from_response(self, response_dict):
         """
