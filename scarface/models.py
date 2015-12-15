@@ -1,3 +1,4 @@
+import logging
 from abc import ABCMeta, abstractmethod
 import json
 from boto.exception import BotoServerError
@@ -5,6 +6,8 @@ import re
 from django.db import models
 from .utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported
+
+logger = logging.getLogger('django_scarface')
 
 AVAILABLE_PLATFORMS = {
     # 'ADM': 'Amazon Device Messaging (ADM)',
@@ -158,6 +161,11 @@ class Device(SNSCRUDMixin, models.Model):
         if not hasattr(self, '_platform'):
             self._platform = self.application.platform_for_device(self)
         return self._platform
+
+    def delete(self, using=None, connection=None):
+        if not self.deregister(connection):
+            logger.warn("Could not unregister device on delete.")
+        super().delete(using)
 
     @DefaultConnection
     def register(self, custom_user_data='', connection=None):
@@ -330,6 +338,12 @@ class Platform(SNSCRUDMixin, models.Model):
         }
 
     @DefaultConnection
+    def delete(self, using=None, connection=None):
+        if not self.deregister(connection):
+            logger.warn("Could not unregister platform on delete.")
+        super().delete(using)
+
+    @DefaultConnection
     def register(self, connection=None):
         """
         Adds an app to SNS. Apps are per platform. The name of a sns application is app_platform
@@ -478,6 +492,11 @@ class Topic(SNSCRUDMixin, models.Model):
     def full_name(self):
         return '_'.join([self.application.name, self.name])
 
+    def delete(self, using=None, connection=None):
+        if not self.deregister(connection):
+            logger.warn("Could not unregister topic on delete.")
+        super().delete(using)
+
     @DefaultConnection
     def register(self, connection=None):
         response = connection.create_topic(self.full_name)
@@ -519,8 +538,8 @@ class Topic(SNSCRUDMixin, models.Model):
             device=device,
             topic=self
         )
-        subscription.deregister(connection)
-        subscription.delete()
+        subscription.delete(connection=connection)
+        return True
 
     @DefaultConnection
     def all_subscriptions(self, connection=None):
@@ -582,18 +601,6 @@ class PushMessage(models.Model):
     receiver_arn = models.TextField(blank=True, null=True)
     message_type = models.PositiveSmallIntegerField(default=0)
 
-    # def __init__(self, message='', context='default', context_id='none', badge_count=0, sound=None, has_new_content=0,
-    # extra_payload=None):
-    # super(PushMessage, self).__init__(message, context, context_id, badge_count, sound, has_new_content,
-    # extra_payload)
-    #     self.sound = sound
-    #     self.message = message
-    #     self.has_new_content = has_new_content
-    #     self.context_id = context_id
-    #     self.context = context
-    #     self.badge_count = badge_count
-    #     self.extra_payload = extra_payload
-
     def as_dict(self):
         d = {
             'message': self.message,
@@ -640,6 +647,13 @@ class Subscription(SNSCRUDMixin, models.Model):
     def arn_key(self):
         return u'SubscriptionArn'
 
+    @DefaultConnection
+    def delete(self, using=None, connection=None):
+        if not self.deregister(connection):
+            logger.warn("Could not unregister subscription on delete.")
+        super().delete(using)
+
+    @DefaultConnection
     def register(self, connection=None):
         if not self.device.is_registered:
             success = self.device.register()
@@ -662,7 +676,11 @@ class Subscription(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None):
         if not self.is_registered:
             return False
-        connection.unsubscribe(self.arn)
+        success =  connection.unsubscribe(self.arn)
+        if success:
+            self.arn = None
+            self.save()
+        return success
 
 
 def format_push(badgeCount, context, context_id, has_new_content, message,

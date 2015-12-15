@@ -223,6 +223,16 @@ class PlatformTestCase(BaseTestCase):
 
         self.assertFalse(platform.is_registered)
 
+    def test_delete(self):
+        app = self.application
+        platform = self.get_apns_platform(app)
+        connection = Mock()
+        platform.delete(connection=connection)
+
+        connection.delete_platform_application.assert_called_once_with(
+            TEST_ARN_TOKEN_APNS
+        )
+
     def test_all_devices(self):
         ARN_1 = 'arn_1'
         ARN_2 = 'arn_2'
@@ -347,6 +357,18 @@ class DeviceTestCase(BaseTestCase):
         )
         self.assertFalse(device.is_registered)
 
+    def test_delete(self):
+        app = self.application
+        device = self.get_android_device(app)
+        connection = Mock()
+        connection.delete_endpoint.return_value = True
+
+        device.delete(connection=connection)
+
+        connection.delete_endpoint.assert_called_once_with(
+            TEST_ARN_TOKEN_ANDROID_DEVICE
+        )
+
     def test_send_message(self):
         app = self.application
         device = self.get_android_device(app)
@@ -430,6 +452,21 @@ class TopicTestCase(BaseTestCase):
         )
         self.assertFalse(topic.is_registered)
 
+    def test_delete(self):
+        app = self.application
+        topic = Topic.objects.create(
+            name=TEST_TOPIC_NAME,
+            application = app,
+            arn=TEST_ARN_TOKEN_TOPIC
+        )
+
+        connection = Mock()
+        topic.delete(connection=connection)
+
+        connection.delete_topic.assert_called_once_with(
+            TEST_ARN_TOKEN_TOPIC
+        )
+
     def test_register_device(self):
         app = self.application
         platform = self.get_apns_platform(app)
@@ -474,6 +511,7 @@ class TopicTestCase(BaseTestCase):
                 }
             }
         }
+        connection.unsubscribe.return_value = True
         topic.register_device(device, connection)
         subscription_arn = Subscription.objects.get(
             device=device,
