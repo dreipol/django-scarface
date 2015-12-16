@@ -3,7 +3,6 @@
 from os.path import abspath, basename, dirname, join, normpath
 from sys import path
 
-
 DJANGO_ROOT = dirname(abspath(__file__))
 SITE_ROOT = dirname(DJANGO_ROOT)
 SITE_NAME = basename(SITE_ROOT)
@@ -21,11 +20,13 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'django_scarface',  # Or path to database file if using sqlite3.
+        'NAME': 'django_scarface',
+    # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': 'django',
         'PASSWORD': 'django',
-        'HOST': '127.0.0.1',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'HOST': '127.0.0.1',
+    # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '',  # Set to empty string for default.
     }
 }
@@ -124,6 +125,7 @@ TEMPLATE_DIRS = (
 )
 
 DJANGO_APPS = (
+    'suit',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -145,7 +147,6 @@ LOCAL_APPS = (
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
-
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -176,14 +177,15 @@ LOGGING = {
     }
 }
 
-TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
-                               "django.core.context_processors.debug",
-                               "django.core.context_processors.i18n",
-                               "django.core.context_processors.media",
-                               "django.core.context_processors.static",
-                               "django.core.context_processors.tz",
-                               "django.contrib.messages.context_processors.messages",
-                               'django.core.context_processors.request'
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.contrib.auth.context_processors.auth",
+    "django.core.context_processors.debug",
+    "django.core.context_processors.i18n",
+    "django.core.context_processors.media",
+    "django.core.context_processors.static",
+    "django.core.context_processors.tz",
+    "django.contrib.messages.context_processors.messages",
+    'django.core.context_processors.request'
 )
 
 SUIT_CONFIG = {
@@ -205,6 +207,3 @@ AWS_BUCKET = "<YOUR-BUCKET-NAME>"
 SCARFACE_GCM_API_KEY = "<YOUR-GCM-API-KEY>"
 SCARFACE_APNS_CERTIFICATE = "<YOUR-APNS-CERTIFICATE-KEY>"
 SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"
-
-# def get_gcm_app():
-#     return ScarfaceApplication.get_or_create(name='')

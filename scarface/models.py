@@ -4,7 +4,7 @@ import json
 from boto.exception import BotoServerError
 import re
 from django.db import models
-from .utils import DefaultConnection, PushLogger
+from scarface.utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported
 
 logger = logging.getLogger('django_scarface')
@@ -161,11 +161,11 @@ class Device(SNSCRUDMixin, models.Model):
             self._platform = self.application.platform_for_device(self)
         return self._platform
 
-    @DefaultConnection
-    def delete(self, using=None, connection=None):
-        if not self.deregister(connection):
-            logger.warn("Could not unregister device on delete.")
-        super().delete(using)
+    # @DefaultConnection
+    # def delete(self, using=None, connection=None):
+    #     if not self.deregister(connection):
+    #         logger.warn("Could not unregister device on delete.")
+    #     super().delete(using)
 
     @DefaultConnection
     def register(self, custom_user_data='', connection=None):
@@ -535,11 +535,15 @@ class Topic(SNSCRUDMixin, models.Model):
 
     @DefaultConnection
     def deregister_device(self, device, connection=None):
-        subscription = Subscription.objects.get(
-            device=device,
-            topic=self
-        )
-        subscription.delete(connection=connection)
+        try:
+            subscription = Subscription.objects.get(
+                device=device,
+                topic=self
+            )
+            subscription.delete(connection=connection)
+        except Subscription.DoesNotExist:
+            logger.warn("Device is not registerd with topic.")
+            return False
         return True
 
     @DefaultConnection
