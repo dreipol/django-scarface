@@ -11,7 +11,6 @@ from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
 logger = logging.getLogger('django_scarface')
 
 AVAILABLE_PLATFORMS = (
-    # 'ADM': 'Amazon Device Messaging (ADM)',
     ('APNS', 'Apple Push Notification Service (APNS)'),
     ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'),
     ('GCM', 'Google Cloud Messaging (GCM)'),
@@ -418,7 +417,7 @@ class Platform(SNSCRUDMixin, models.Model):
         :return:
         """
         if not self.is_registered:
-            raise SNSNotCreatedException
+            raise NotRegisteredException
 
         success = connection.delete_platform_application(self.arn)
         if not success:
@@ -559,7 +558,7 @@ class Topic(SNSCRUDMixin, models.Model):
     @DefaultConnection
     def deregister(self, connection=None):
         if not self.is_registered:
-            raise SNSNotCreatedException
+            raise NotRegisteredException
         success = connection.delete_topic(self.arn)
         if success:
             self.arn = None

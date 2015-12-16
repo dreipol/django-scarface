@@ -8,7 +8,6 @@ class PlatformInline(admin.TabularInline):
     model = Platform
     extra = 0
 
-
 class ApplicationAdmin(admin.ModelAdmin):
     inlines = [PlatformInline]
     list_display = ['name']
