@@ -9,12 +9,12 @@ from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported
 
 logger = logging.getLogger('django_scarface')
 
-AVAILABLE_PLATFORMS = {
+AVAILABLE_PLATFORMS = (
     # 'ADM': 'Amazon Device Messaging (ADM)',
-    'APNS': 'Apple Push Notification Service (APNS)',
-    'APNS_SANDBOX': 'Apple Push Notification Service Sandbox (APNS_SANDBOX)',
-    'GCM': 'Google Cloud Messaging (GCM)',
-}
+    ('APNS', 'Apple Push Notification Service (APNS)'),
+    ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'),
+    ('GCM', 'Google Cloud Messaging (GCM)'),
+)
 
 IOS = 1
 ANDROID = 2
@@ -25,7 +25,6 @@ OS = {
 
 
 class SNSCRUDMixin(object):
-
     @property
     def resource_name(self):
         return self.name
@@ -270,7 +269,7 @@ class Device(SNSCRUDMixin, models.Model):
 class Platform(SNSCRUDMixin, models.Model):
     platform = models.CharField(
         max_length=255,
-        choices=AVAILABLE_PLATFORMS.items()
+        choices=AVAILABLE_PLATFORMS
     )
 
     arn = models.CharField(
@@ -681,7 +680,7 @@ class Subscription(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None):
         if not self.is_registered:
             return False
-        success =  connection.unsubscribe(self.arn)
+        success = connection.unsubscribe(self.arn)
         if success:
             self.arn = None
             self.save()
