@@ -15,5 +15,10 @@ logger = logging.getLogger('django_scarface')
 @receiver(post_delete, sender=Topic)
 @receiver(post_delete, sender=Subscription)
 def device_deleted(sender, instance, **kwargs):
-    if not instance.deregister():
-        logger.warn("Could not unregister device on delete.")
+    """
+    Unregisters the instance from amazon sns.
+    """
+    if instance.is_registered and not instance.deregister():
+        logger.warn("Could not unregister {0} on delete.".format(
+            sender
+        ))

@@ -4,6 +4,10 @@
 
 Send push notifications to mobile devices using Amazon SNS.
 
+**!!! Warning!!**
+
+Version >3.0 is not compatible with versions <3.0! Migrations have changed!
+
 ## Getting Started
 
 ### Setup
@@ -19,13 +23,6 @@ Edit your settings.py file::
 		"scarface",
 	)
 
-
-Native Django migrations are supported on Django 1.7 and beyond. The app will automatically
-fall back to South on older versions, however you will also need the following setting::
-
-	SOUTH_MIGRATION_MODULES = {"scarface": "scarface.migrations"}
-
-Add your AWS credentials and the required settings for Apple Push Notifications and/or Google Cloud Messaging as documented in the [Settings Chapter](#settings).
 
 
 ## Settings

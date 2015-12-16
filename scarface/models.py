@@ -5,7 +5,8 @@ from boto.exception import BotoServerError
 import re
 from django.db import models
 from scarface.utils import DefaultConnection, PushLogger
-from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported
+from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
+    SNSException, NotRegisteredException
 
 logger = logging.getLogger('django_scarface')
 
@@ -31,22 +32,41 @@ class SNSCRUDMixin(object):
 
     @property
     def response_key(self):
+        '''
+        Used for extracting the arn key from a response.
+        '''
         return u'Create{0}Response'.format(self.resource_name)
 
     @property
     def result_key(self):
+        '''
+        Used for extracting the arn key from a response.
+        '''
         return u'Create{0}Result'.format(self.resource_name)
 
     @property
     def arn_key(self):
+        '''
+        Used for extracting the arn key from a response.
+        '''
         return u'{0}Arn'.format(self.resource_name)
 
     @property
     def is_registered(self):
+        '''
+        Returns whether the the instance is registered
+        to SNS or not
+        '''
         return self.arn and len(self.arn) > 0
+
+    def is_registered_or_register(self):
+        if not self.is_registered:
+            return self.register()
+        return True
 
     def set_arn_from_response(self, response_dict):
         """
+        Extracts the arn key from a boto response dict.
         :type response_dict: dict
         :param response_dict:
         :rtype boolean:
@@ -64,7 +84,7 @@ class SNSCRUDMixin(object):
     @abstractmethod
     def register(self, connection=None):
         """
-
+        Registers the instance to SNS.
         :param connection:
         :rtype boolean:
         :return: if create was successful
@@ -73,6 +93,10 @@ class SNSCRUDMixin(object):
 
 
 class Application(models.Model):
+    '''
+    Main access point for the scarface library. Is used
+    to manage the different platforms.
+    '''
     name = models.CharField(
         max_length=255,
         unique=True
@@ -82,12 +106,26 @@ class Application(models.Model):
         return self.name
 
     def get_device(self, device_id):
-        return self.devices.filter(udid=device_id)
+        '''
+        Returns a device by its device_id.
+        '''
+        return self.devices.get(udid=device_id)
 
     def get_topic(self, name):
+        '''
+        Returns a topic by its name.
+
+        '''
         return self.topics.get(name=name)
 
     def get_or_create_topic(self, name):
+        '''
+        Returns a topic by its name. If the topic is
+        not yet registered with this application the
+        topic is created.
+        :return: Topic, created
+        :exception SNSException
+        '''
         try:
             return self.topics.get(name=name), False
         except Topic.DoesNotExist:
@@ -100,6 +138,14 @@ class Application(models.Model):
             return topic, True
 
     def platform_for_device(self, device):
+        '''
+        Returns a platform for a provided device.
+        The returned platfrom depends on the devi-
+        ce's os.
+        :param device:
+        :return:
+        :exception PlatformNotSupported
+        '''
         platform = None
         if device.os is IOS:
             platform = self.platforms.filter(platform__in=[
@@ -115,6 +161,11 @@ class Application(models.Model):
 
 
 class Device(SNSCRUDMixin, models.Model):
+    '''
+    Device class for registering a end point to
+    SNS.
+    '''
+
     device_id = models.CharField(
         max_length=255,
     )
@@ -160,33 +211,33 @@ class Device(SNSCRUDMixin, models.Model):
             self._platform = self.application.platform_for_device(self)
         return self._platform
 
-    # @DefaultConnection
-    # def delete(self, using=None, connection=None):
-    #     if not self.deregister(connection):
-    #         logger.warn("Could not unregister device on delete.")
-    #     super().delete(using)
-
     @DefaultConnection
     def register(self, custom_user_data='', connection=None):
-        if not self.platform.is_registered:
-            success = self.platform.register(connection)
-            if not success:
-                return success
+        '''
+        :exception SNSException
+        '''
+        self.platform.is_registered_or_register()
         response = connection.create_platform_endpoint(
             self.platform.arn,
             self.push_token,
             custom_user_data=custom_user_data
         )
-        self.is_enabled = success = self.set_arn_from_response(response)
-        # TODO: What is the app topic ?
-        # if self.is_registered:
-        #     self.platform.app_topic.register_device(self)
+        success = self.set_arn_from_response(response)
+        if not success:
+            raise SNSException(
+                'Failed to register Device.({0})'.format(success)
+            )
         self.save()
         return success
 
     @DefaultConnection
-    def register_or_update(self, new_token=None, custom_user_data=u"",
-                           connection=None):
+    def register_or_update( self, new_token=None, custom_user_data=u"",
+                            connection=None ):
+        '''
+        Registers the device to SNS. If the device was
+        previously registered the registration is updated.
+        :return: True if the registration/update was successful
+        '''
         if self.is_registered:
             result = self.update(new_token, custom_user_data, connection)
         else:
@@ -211,21 +262,26 @@ class Device(SNSCRUDMixin, models.Model):
     @DefaultConnection
     def deregister(self, connection=None):
         """
+        Dergisters the device from SNS.
         :type connection: SNSConnection
         :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
         :return:
         """
         if not self.is_registered:
-            raise SNSNotCreatedException
-        # ToDo: Delete from topics as well
+            raise NotRegisteredException()
         success = connection.delete_endpoint(self.arn)
-        if success:
-            self.arn = None
-            self.save()
+        if not success:
+            SNSException(
+                'Failed to deregister device.({0})'.format(success)
+            )
+        self.arn = None
+        self.save()
         return success
 
     @DefaultConnection
     def send_message(self, message, connection=None):
+        if not self.is_registered:
+            raise NotRegisteredException
         return connection.publish(message=message, target_arn=self.arn)
 
     @PushLogger
@@ -236,6 +292,8 @@ class Device(SNSCRUDMixin, models.Model):
         :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
         :return:
         """
+        if not self.is_registered:
+            raise NotRegisteredException
         push_message = self.platform.format_payload(push_message)
         json_string = json.dumps(push_message)
         return connection.publish(
@@ -251,6 +309,8 @@ class Device(SNSCRUDMixin, models.Model):
         :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
         :return:
         """
+        if not self.is_registered:
+            raise NotRegisteredException
 
         new_token = new_token if new_token else self.push_token
         attributes = {"Enabled": True, "Token": new_token}
@@ -321,25 +381,12 @@ class Platform(SNSCRUDMixin, models.Model):
         return 'PlatformApplication'
 
     @property
-    def app_topic(self):
-        if not self._app_topic:
-            topic = Topic(self.app_name)
-            if topic.register():
-                self._app_topic = topic
-        return self._app_topic
-
-    @property
     def attributes(self):
         return {
             "PlatformCredential": self.credential,
             "PlatformPrincipal": self.principal
         }
 
-    @DefaultConnection
-    def delete(self, using=None, connection=None):
-        if not self.deregister(connection):
-            logger.warn("Could not unregister platform on delete.")
-        super().delete(using)
 
     @DefaultConnection
     def register(self, connection=None):
@@ -357,6 +404,10 @@ class Platform(SNSCRUDMixin, models.Model):
             self.platform,
             self.attributes
         )
+        if not response:
+            raise SNSException(
+                'Failed to register Platform.{0}'.format(response)
+            )
         return self.set_arn_from_response(response)
 
     @DefaultConnection
@@ -368,10 +419,14 @@ class Platform(SNSCRUDMixin, models.Model):
         """
         if not self.is_registered:
             raise SNSNotCreatedException
+
         success = connection.delete_platform_application(self.arn)
-        if success:
-            self.arn = None
-            self.save()
+        if not success:
+            SNSException(
+                'Failded to deregister Platform.({0})'.format(success)
+            )
+        self.arn = None
+        self.save()
         return success
 
     @DefaultConnection
@@ -491,14 +546,13 @@ class Topic(SNSCRUDMixin, models.Model):
         return '_'.join([self.application.name, self.name])
 
     @DefaultConnection
-    def delete(self, using=None, connection=None):
-        if not self.deregister(connection):
-            logger.warn("Could not unregister topic on delete.")
-        super().delete(using)
-
-    @DefaultConnection
     def register(self, connection=None):
+
         response = connection.create_topic(self.full_name)
+        if not response:
+            raise SNSException(
+                'Failed to register Topic. ({0})'.format(response)
+            )
         self.set_arn_from_response(response)
         self.save()
 
@@ -510,6 +564,11 @@ class Topic(SNSCRUDMixin, models.Model):
         if success:
             self.arn = None
             self.save()
+        else:
+            raise SNSException(
+                'Failed to deregister Topic. ({0})'.format(success)
+            )
+
         return success
 
     @DefaultConnection
@@ -522,24 +581,26 @@ class Topic(SNSCRUDMixin, models.Model):
         :rtype bool:
         :return:
         """
-        if not (self.is_registered and device.is_registered):
-            raise SNSNotCreatedException
+        self.is_registered_or_register()
+        device.is_registered_or_register()
         subscription, created = Subscription.objects.get_or_create(
             device=device,
             topic=self,
         )
         success = subscription.register(connection)
-        subscription.save()
         return success
 
     @DefaultConnection
     def deregister_device(self, device, connection=None):
+        if not device.is_registered:
+            raise NotRegisteredException
         try:
             subscription = Subscription.objects.get(
                 device=device,
                 topic=self
             )
-            subscription.delete(connection=connection)
+            subscription.deregister(connection)
+            subscription.delete()
         except Subscription.DoesNotExist:
             logger.warn("Device is not registerd with topic.")
             return False
@@ -652,38 +713,32 @@ class Subscription(SNSCRUDMixin, models.Model):
         return u'SubscriptionArn'
 
     @DefaultConnection
-    def delete(self, using=None, connection=None):
-        if not self.deregister(connection):
-            logger.warn("Could not unregister subscription on delete.")
-        super().delete(using)
-
-    @DefaultConnection
     def register(self, connection=None):
-        if not self.device.is_registered:
-            success = self.device.register()
-            if not success:
-                return success
-        if not self.topic.is_registered:
-            success = self.topic.register()
-            if not success:
-                return success
-
+        self.device.is_registered_or_register()
+        self.topic.is_registered_or_register()
         success = connection.subscribe(
             topic=self.topic.arn,
             endpoint=self.device.arn,
             protocol="application"
         )
+        if not success:
+            raise SNSException(
+                'Failed to subscribe device to topic.({0})'.format(success)
+            )
         self.set_arn_from_response(success)
         self.save()
 
     @DefaultConnection
     def deregister(self, connection=None):
         if not self.is_registered:
-            return False
+            raise NotRegisteredException
         success = connection.unsubscribe(self.arn)
-        if success:
-            self.arn = None
-            self.save()
+        if not success:
+            raise SNSException(
+                'Failed to unsubscribe Device from Topic.({0})'.format(success)
+            )
+        self.arn = None
+        self.save()
         return success
 
 
