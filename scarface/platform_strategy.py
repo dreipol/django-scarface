@@ -20,6 +20,14 @@ def get_strategies():
         strategies[strategy_class.id] = strategy_class
     return strategies
 
+def get_strategy_choices():
+    strategies = get_strategies()
+    choices = {}
+    for id, strategy_class in strategies.items():
+        choices[id]  = strategy_class.service_name
+    return choices
+
+
 def _import_strategy(path):
     components = path.split('.')
     mod = __import__(components[0])
@@ -34,6 +42,7 @@ class PlatformStrategy(metaclass=ABCMeta):
         self.platform = platform_application
 
     id = ''
+    service_name = ''
 
     def format_payload(self, data):
         return {self.platform.platform: json.dumps(data)}
@@ -79,6 +88,35 @@ class PlatformStrategy(metaclass=ABCMeta):
 class APNPlatformStrategy(PlatformStrategy):
 
     id = 'APNS'
+    service_name = 'Apple Push Notification Service (APNS)'
+
+    def format_payload(self, message):
+        """
+        :type message: PushMessage
+        :param message:
+        :return:
+        """
+
+        payload = self.format_push(
+            message.badge_count,
+            message.context,
+            message.context_id,
+            message.has_new_content,
+            message.message, message.sound
+        )
+
+        if message.extra_payload:
+            payload.update(message.extra_payload)
+
+        return super(
+            APNPlatformStrategy,
+            self
+        ).format_payload(payload)
+
+class APNSSandboxPlatformStrategy(PlatformStrategy):
+
+    id = 'APNS_SANDBOX'
+    service_name = 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'
 
     def format_payload(self, message):
         """
@@ -107,6 +145,7 @@ class APNPlatformStrategy(PlatformStrategy):
 class GCMPlatformStrategy(PlatformStrategy):
 
     id = 'GCM'
+    service_name = 'Google Cloud Messaging (GCM)'
 
     def format_payload(self, message):
         """

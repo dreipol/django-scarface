@@ -5,21 +5,19 @@ from boto.exception import BotoServerError
 import re
 from django.db import models
 
-from scarface.platform_strategy import APNPlatformStrategy, GCMPlatformStrategy
+from scarface.platform_strategy import APNPlatformStrategy, GCMPlatformStrategy, \
+    get_strategies
 from scarface.utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
     SNSException, NotRegisteredException
 
 logger = logging.getLogger('django_scarface')
 
-AVAILABLE_PLATFORMS = (
-    ('APNS', 'Apple Push Notification Service (APNS)'),
-    ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'),
-    ('GCM', 'Google Cloud Messaging (GCM)'),
-)
-
-IOS = 1
-ANDROID = 2
+# AVAILABLE_PLATFORMS = (
+#     ('APNS', 'Apple Push Notification Service (APNS)'),
+#     ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'),
+#     ('GCM', 'Google Cloud Messaging (GCM)'),
+# )
 
 class SNSCRUDMixin(object):
 
@@ -163,7 +161,7 @@ class Device(SNSCRUDMixin, models.Model):
     )
 
     push_token = models.CharField(
-        max_length=255,
+        max_length=512,
     )
 
     topics = models.ManyToManyField(
@@ -304,7 +302,6 @@ class Device(SNSCRUDMixin, models.Model):
 class Platform(SNSCRUDMixin, models.Model):
     platform = models.CharField(
         max_length=255,
-        choices=AVAILABLE_PLATFORMS
     )
 
     arn = models.CharField(
@@ -342,10 +339,11 @@ class Platform(SNSCRUDMixin, models.Model):
 
     @property
     def strategy(self):
-        if self.platform in ['APNS', 'APN_SANDBOX']:
-            return APNPlatformStrategy(self)
-        elif self.platform in ['GCM']:
-            return GCMPlatformStrategy(self)
+        strategies = get_strategies()
+        if self.platform in strategies.keys():
+            return strategies[self.platform](self)
+        else:
+            raise PlatformNotSupported
 
     @property
     def name(self):

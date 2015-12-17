@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
+
+from scarface.forms import PlatformAdminForm
 from scarface.models import Application, Platform, Topic, PushMessage
 
 __author__ = 'janmeier'
@@ -15,6 +17,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 
 class PlatformAdmin(admin.ModelAdmin):
     list_display = ['platform', 'application', 'arn']
+    form = PlatformAdminForm
 
 
 class TopicAdmin(admin.ModelAdmin):
