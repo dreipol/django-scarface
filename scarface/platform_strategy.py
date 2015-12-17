@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 import json
-from abc import ABCMeta
+from abc import ABCMeta, abstractproperty
+from copy import deepcopy
 
 from django.conf import settings
 
-from scarface.settings import DEFAULT_STRATEGIES
+from scarface.settings import DEFAULT_PLATFORM_STRATEGIES
 
 __author__ = 'janmeier'
 
-# def get_strategies():
-#     strategy_modules = DEFAULT_STRATEGIES
-#
-#     if hasattr(settings, 'SCARFACE_PLATFORM_STRATEGIES'):
-#         strategy_modules.append(settings.SCARFACE_PLATFROM_STRATEGIES)
-#
-#     for strategy_path in strategy_modules:
-#         strategy = _import_strategy(strategy_path)
-#     return strategy
+def get_strategies():
+    strategy_modules = deepcopy(DEFAULT_PLATFORM_STRATEGIES)
+    if hasattr(settings, 'SCARFACE_PLATFORM_STRATEGIES'):
+        strategy_modules += settings.SCARFACE_PLATFORM_STRATEGIES
+
+    strategies = {}
+    for strategy_path in strategy_modules:
+        strategy_class = _import_strategy(strategy_path)
+        strategies[strategy_class.id] = strategy_class
+    return strategies
 
 def _import_strategy(path):
     components = path.split('.')
@@ -26,9 +28,12 @@ def _import_strategy(path):
     return mod
 
 class PlatformStrategy(metaclass=ABCMeta):
+
     def __init__(self, platform_application):
         super().__init__()
         self.platform = platform_application
+
+    id = ''
 
     def format_payload(self, data):
         return {self.platform.platform: json.dumps(data)}
@@ -72,6 +77,9 @@ class PlatformStrategy(metaclass=ABCMeta):
 
 
 class APNPlatformStrategy(PlatformStrategy):
+
+    id = 'APNS'
+
     def format_payload(self, message):
         """
         :type message: PushMessage
@@ -97,6 +105,9 @@ class APNPlatformStrategy(PlatformStrategy):
 
 
 class GCMPlatformStrategy(PlatformStrategy):
+
+    id = 'GCM'
+
     def format_payload(self, message):
         """
         :type data: PushMessage

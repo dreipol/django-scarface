@@ -10,8 +10,8 @@ from unittest.mock import Mock
 from boto.exception import BotoServerError
 from django.test import TestCase
 from scarface.exceptions import PlatformNotSupported
-# from scarface.platform_strategy import get_strategies
-from scarface.settings import DEFAULT_STRATEGIES
+from scarface.platform_strategy import get_strategies, PlatformStrategy
+from scarface.settings import DEFAULT_PLATFORM_STRATEGIES
 from .models import Application, Platform, Topic, Device, Subscription, PushMessage
 from .utils import DefaultConnection
 
@@ -544,11 +544,29 @@ class TopicTestCase(BaseTestCase):
         self.assertTrue(connection.publish.called)
 
 
-# class StrategyImportTestCase(TestCase):
-#
-#     def test_get_strategies(self):
-#         strategies = get_strategies()
-#         self.assertEqual(len(strategies), len(DEFAULT_STRATEGIES))
+class TestStrategy(PlatformStrategy):
+    id = 'test'
+    pass
+
+class StrategyImportTestCase(TestCase):
+
+    def test_get_strategies(self):
+        strategies = get_strategies()
+        self.assertEqual(len(strategies), len(DEFAULT_PLATFORM_STRATEGIES))
+
+    def test_get_strategies_custom(self):
+        from django.conf import settings
+        settings.SCARFACE_PLATFORM_STRATEGIES = [
+            'scarface.tests.TestStrategy'
+        ]
+        strategies = get_strategies()
+        self.assertEqual(
+            len(strategies),
+            len(
+                DEFAULT_PLATFORM_STRATEGIES
+                + settings.SCARFACE_PLATFORM_STRATEGIES
+            )
+        )
 
 @DefaultConnection
 def connection_test(a=None, connection=None):
