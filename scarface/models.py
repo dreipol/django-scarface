@@ -4,6 +4,8 @@ import json
 from boto.exception import BotoServerError
 import re
 from django.db import models
+
+from scarface.platform_strategy import APNPlatformStrategy, GCMPlatformStrategy
 from scarface.utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
     SNSException, NotRegisteredException
@@ -442,55 +444,6 @@ class Platform(SNSCRUDMixin, models.Model):
         return self.strategy.format_payload(data)
 
 
-class PlatformStrategy(metaclass=ABCMeta):
-    def __init__(self, platform_application):
-        super().__init__()
-        self.platform = platform_application
-
-    def format_payload(self, data):
-        return {self.platform.platform: json.dumps(data)}
-
-
-class APNPlatformStrategy(PlatformStrategy):
-    def format_payload(self, message):
-        """
-        :type message: PushMessage
-        :param message:
-        :return:
-        """
-
-        payload = format_push(
-            message.badge_count,
-            message.context,
-            message.context_id,
-            message.has_new_content,
-            message.message, message.sound
-        )
-
-        if message.extra_payload:
-            payload.update(message.extra_payload)
-
-        return super(
-            APNPlatformStrategy,
-            self
-        ).format_payload(payload)
-
-
-class GCMPlatformStrategy(PlatformStrategy):
-    def format_payload(self, message):
-        """
-        :type data: PushMessage
-        :param data:
-        :return:
-        """
-        data = message.as_dict()
-        h = hash(frozenset(data.items()))
-        return super(
-            GCMPlatformStrategy,
-            self
-        ).format_payload({"collapse_key": h, "data": data})
-
-
 class Topic(SNSCRUDMixin, models.Model):
     name = models.CharField(
         max_length=64
@@ -718,40 +671,3 @@ class Subscription(SNSCRUDMixin, models.Model):
         return success
 
 
-def format_push(badgeCount, context, context_id, has_new_content, message,
-                sound):
-    if message:
-        message = trim_message(message)
-
-    payload = {
-        'aps': {
-            "content-available": has_new_content,
-        },
-        "ctx": context,
-        "id": context_id
-    }
-
-    if message and len(message) > 0:
-        payload['aps']['alert'] = message
-
-    if not badgeCount is None:
-        payload['aps'].update({
-            "badge": badgeCount,
-        })
-
-    if not sound is None:
-        payload['aps'].update({
-            'sound': sound,
-        })
-
-    return payload
-
-
-def trim_message(message):
-    import sys
-
-    if sys.getsizeof(message) > 140:
-        while sys.getsizeof(message) > 140:
-            message = message[:-3]
-        message += '...'
-    return message

@@ -5,16 +5,15 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 import unittest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 from boto.exception import BotoServerError
-from six import StringIO
 from django.test import TestCase
-from django.core.management import call_command
 from scarface.exceptions import PlatformNotSupported
-from .models import Application, Platform, Topic, Device, IOS, \
-    ANDROID, Subscription, PushMessage
-from .utils import get_sns_connection, DefaultConnection
+# from scarface.platform_strategy import get_strategies
+from scarface.settings import DEFAULT_STRATEGIES
+from .models import Application, Platform, Topic, Device, Subscription, PushMessage
+from .utils import DefaultConnection
 
 TEST_ARN_TOKEN = 'test_arn_token'
 TEST_PUSH_TOKEN = 'test_push_token'
@@ -545,6 +544,11 @@ class TopicTestCase(BaseTestCase):
         self.assertTrue(connection.publish.called)
 
 
+# class StrategyImportTestCase(TestCase):
+#
+#     def test_get_strategies(self):
+#         strategies = get_strategies()
+#         self.assertEqual(len(strategies), len(DEFAULT_STRATEGIES))
 
 @DefaultConnection
 def connection_test(a=None, connection=None):

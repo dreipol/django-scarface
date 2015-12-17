@@ -15,26 +15,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Application',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, verbose_name='ID', primary_key=True)),
-                ('name', models.CharField(unique=True, max_length=255)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
+                ('name', models.CharField(max_length=255, unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Device',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, verbose_name='ID', primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('device_id', models.CharField(max_length=255)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
                 ('push_token', models.CharField(max_length=255)),
-                ('os', models.SmallIntegerField(choices=[(1, 'iOS'), (2, 'Android')])),
-                ('application', models.ForeignKey(to='scarface.Application', related_name='devices')),
             ],
             bases=(scarface.models.SNSCRUDMixin, models.Model),
         ),
         migrations.CreateModel(
             name='Platform',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, verbose_name='ID', primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('platform', models.CharField(choices=[('APNS', 'Apple Push Notification Service (APNS)'), ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'), ('GCM', 'Google Cloud Messaging (GCM)')], max_length=255)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
                 ('credential', models.CharField(null=True, max_length=255, blank=True)),
@@ -46,7 +44,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Subscription',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, verbose_name='ID', primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
                 ('device', models.ForeignKey(to='scarface.Device')),
             ],
@@ -55,7 +53,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Topic',
             fields=[
-                ('id', models.AutoField(serialize=False, auto_created=True, verbose_name='ID', primary_key=True)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('name', models.CharField(max_length=64)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
                 ('application', models.ForeignKey(to='scarface.Application', related_name='topics')),
@@ -85,6 +83,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='device',
+            name='platform',
+            field=models.ForeignKey(to='scarface.Platform', related_name='devices'),
+        ),
+        migrations.AddField(
+            model_name='device',
             name='topics',
             field=models.ManyToManyField(to='scarface.Topic', through='scarface.Subscription'),
         ),
@@ -102,6 +105,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='device',
-            unique_together=set([('device_id', 'application')]),
+            unique_together=set([('device_id', 'platform')]),
         ),
     ]
