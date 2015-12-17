@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 import json
 from boto.exception import BotoServerError
 import re
@@ -18,16 +18,12 @@ AVAILABLE_PLATFORMS = (
 
 IOS = 1
 ANDROID = 2
-OS = {
-    IOS: 'iOS',
-    ANDROID: 'Android',
-}
-
 
 class SNSCRUDMixin(object):
-    @property
+
+    @abstractproperty
     def resource_name(self):
-        return self.name
+        pass
 
     @property
     def response_key(self):
@@ -113,7 +109,6 @@ class Application(models.Model):
     def get_topic(self, name):
         '''
         Returns a topic by its name.
-
         '''
         return self.topics.get(name=name)
 
@@ -136,27 +131,12 @@ class Application(models.Model):
             topic.save()
             return topic, True
 
-    def platform_for_device(self, device):
-        '''
-        Returns a platform for a provided device.
-        The returned platfrom depends on the devi-
-        ce's os.
-        :param device:
-        :return:
-        :exception PlatformNotSupported
-        '''
-        platform = None
-        if device.os is IOS:
-            platform = self.platforms.filter(platform__in=[
-                'APNS',
-                'APNS_SANDBOX',
-            ]).first()
-        elif device.os is ANDROID:
-            platform = self.platforms.filter(platform__in=['GCM']).first()
+    def get_platform(self, platform_type):
 
-        if not platform:
-            raise PlatformNotSupported()
-        return platform
+        try:
+            return self.platforms.get(platform=platform_type)
+        except Platform.DoesNotExist:
+            raise PlatformNotSupported
 
 
 class Device(SNSCRUDMixin, models.Model):
@@ -169,8 +149,8 @@ class Device(SNSCRUDMixin, models.Model):
         max_length=255,
     )
 
-    application = models.ForeignKey(
-        to=Application,
+    platform = models.ForeignKey(
+        to='Platform',
         related_name='devices'
     )
 
@@ -184,17 +164,13 @@ class Device(SNSCRUDMixin, models.Model):
         max_length=255,
     )
 
-    os = models.SmallIntegerField(
-        choices=OS.items()
-    )
-
     topics = models.ManyToManyField(
         to='Topic',
         through='Subscription'
     )
 
     class Meta:
-        unique_together = (('device_id', 'application'))
+        unique_together = (('device_id', 'platform'))
 
     @property
     def resource_name(self):
@@ -204,11 +180,6 @@ class Device(SNSCRUDMixin, models.Model):
     def arn_key(self):
         return "EndpointArn"
 
-    @property
-    def platform(self):
-        if not hasattr(self, '_platform'):
-            self._platform = self.application.platform_for_device(self)
-        return self._platform
 
     @DefaultConnection
     def register(self, custom_user_data='', connection=None):
@@ -230,8 +201,8 @@ class Device(SNSCRUDMixin, models.Model):
         return success
 
     @DefaultConnection
-    def register_or_update( self, new_token=None, custom_user_data=u"",
-                            connection=None ):
+    def register_or_update(self, new_token=None, custom_user_data=u"",
+                           connection=None):
         '''
         Registers the device to SNS. If the device was
         previously registered the registration is updated.
@@ -263,7 +234,8 @@ class Device(SNSCRUDMixin, models.Model):
         """
         Dergisters the device from SNS.
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :return:
         """
         if not self.is_registered:
@@ -288,7 +260,8 @@ class Device(SNSCRUDMixin, models.Model):
     def send(self, push_message, connection=None):
         """
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :return:
         """
         if not self.is_registered:
@@ -305,7 +278,8 @@ class Device(SNSCRUDMixin, models.Model):
     def update(self, new_token=None, custom_user_data=u"", connection=None):
         """
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :return:
         """
         if not self.is_registered:
@@ -386,14 +360,15 @@ class Platform(SNSCRUDMixin, models.Model):
             "PlatformPrincipal": self.principal
         }
 
-
     @DefaultConnection
     def register(self, connection=None):
         """
-        Adds an app to SNS. Apps are per platform. The name of a sns application is app_platform
+        Adds an app to SNS. Apps are per platform. The name of a
+        sns application is app_platform.
 
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :rtype bool:
         :return:
         """
@@ -413,7 +388,8 @@ class Platform(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None):
         """
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :return:
         """
         if not self.is_registered:
@@ -576,7 +552,8 @@ class Topic(SNSCRUDMixin, models.Model):
         :type device: Device
         :param device:
         :type connection: SNSConnection
-        :param connection: the connection which should be used. if the argument isn't set there will be created a default connection
+        :param connection: the connection which should be used.
+        if the argument isn't set there will be created a default connection
         :rtype bool:
         :return:
         """

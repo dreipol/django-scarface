@@ -66,21 +66,19 @@ class BaseTestCase(TestCase):
             arn=TEST_ARN_TOKEN_GCM
         )
 
-    def get_ios_device(self, application):
+    def get_ios_device(self, platform):
         return Device.objects.create(
             device_id=TEST_IOS_DEVICE_ID,
-            application=application,
+            platform=platform,
             push_token=TEST_PUSH_TOKEN,
-            os=IOS,
             arn=TEST_ARN_TOKEN_IOS_DEVICE
         )
 
-    def get_android_device(self, application):
+    def get_android_device(self, platform):
         return Device.objects.create(
             device_id=TEST_ANDROID_DEVICE_ID,
-            application=application,
+            platform=platform,
             push_token=TEST_PUSH_TOKEN,
-            os=ANDROID,
             arn=TEST_ARN_TOKEN_ANDROID_DEVICE
         )
 
@@ -91,27 +89,21 @@ class BaseTestCase(TestCase):
             arn=TEST_ARN_TOKEN_TOPIC,
         )
 
-    @property
-    def topic_name(self):
-        return self.app_name + "topic"
-
 
 class ApplicationTestCase(BaseTestCase):
-    def test_platform_for_device(self):
+    def test_get_platform(self):
         app = self.application
-        device_ios = self.get_ios_device(app)
-        device_android = self.get_android_device(app)
         exception = False
 
         try:
-            app.platform_for_device(device_ios)
+            app.get_platform('GCN')
         except PlatformNotSupported:
             exception = True
         self.assertTrue(exception)
 
         exception = False
         try:
-            app.platform_for_device(device_android)
+            app.get_platform('APNS')
         except PlatformNotSupported:
             exception = True
         self.assertTrue(exception)
@@ -120,14 +112,14 @@ class ApplicationTestCase(BaseTestCase):
 
         exception = False
         try:
-            app.platform_for_device(device_ios)
+            app.get_platform('APNS')
         except PlatformNotSupported:
             exception = True
         self.assertFalse(exception)
 
         exception = False
         try:
-            app.platform_for_device(device_android)
+            app.get_platform('GCM')
         except PlatformNotSupported:
             exception = True
         self.assertTrue(exception)
@@ -136,14 +128,14 @@ class ApplicationTestCase(BaseTestCase):
 
         exception = False
         try:
-            app.platform_for_device(device_ios)
+            app.get_platform('APNS')
         except PlatformNotSupported:
             exception = True
         self.assertFalse(exception)
 
         exception = False
         try:
-            app.platform_for_device(device_android)
+            app.get_platform('GCM')
         except PlatformNotSupported:
             exception = True
         self.assertFalse(exception)
@@ -252,9 +244,8 @@ class PlatformTestCase(BaseTestCase):
         def create_device(id, arn):
             return Device.objects.create(
                 device_id=id,
-                application=app,
+                platform=platform,
                 push_token=TEST_PUSH_TOKEN,
-                os=IOS,
                 arn=arn
             )
 
@@ -285,9 +276,7 @@ class DeviceTestCase(BaseTestCase):
     def test_register_ios_device(self):
         connection = Mock()
         application = self.application
-        get_platform = Mock()
-        get_platform.return_value = self.get_apns_platform(application)
-        application.platform_for_device = get_platform
+        platform = self.get_apns_platform(application)
 
         connection.create_platform_endpoint.return_value = {
             'CreatePlatformEndpointResponse': {
@@ -299,14 +288,12 @@ class DeviceTestCase(BaseTestCase):
 
         device = Device.objects.create(
             device_id=TEST_DEVICE_ID,
-            application=application,
             push_token=TEST_PUSH_TOKEN,
-            os=IOS
+            platform=platform
         )
 
         device.register(connection=connection)
 
-        application.platform_for_device.assert_called_once_with(device)
         connection.create_platform_endpoint.assert_called_once_with(
             TEST_ARN_TOKEN_APNS,
             TEST_PUSH_TOKEN,
@@ -318,9 +305,7 @@ class DeviceTestCase(BaseTestCase):
     def test_register_android_device(self):
         connection = Mock()
         application = self.application
-        get_platform = Mock()
-        get_platform.return_value = self.get_gcm_platform(application)
-        application.platform_for_device = get_platform
+        platform = self.get_gcm_platform(application)
 
         connection.create_platform_endpoint.return_value = {
             'CreatePlatformEndpointResponse': {
@@ -332,14 +317,12 @@ class DeviceTestCase(BaseTestCase):
 
         device = Device.objects.create(
             device_id=TEST_DEVICE_ID,
-            application=application,
+            platform=platform,
             push_token=TEST_PUSH_TOKEN,
-            os=ANDROID
         )
 
         device.register(connection=connection)
 
-        application.platform_for_device.assert_called_once_with(device)
         connection.create_platform_endpoint.assert_called_once_with(
             TEST_ARN_TOKEN_GCM,
             TEST_PUSH_TOKEN,
@@ -350,7 +333,8 @@ class DeviceTestCase(BaseTestCase):
 
     def test_deregister(self):
         app = self.application
-        device = self.get_android_device(app)
+        platform = self.get_gcm_platform(app)
+        device = self.get_android_device(platform)
         connection = Mock()
         connection.delete_endpoint.return_value = True
 
@@ -364,7 +348,8 @@ class DeviceTestCase(BaseTestCase):
     @unittest.skip("Post delete signal and mock connection don't work together.")
     def test_delete(self):
         app = self.application
-        device = self.get_android_device(app)
+        platform = self.get_gcm_platform(app)
+        device = self.get_android_device(platform)
         connection = Mock()
         connection.delete_endpoint.return_value = True
 
@@ -376,7 +361,8 @@ class DeviceTestCase(BaseTestCase):
 
     def test_send_message(self):
         app = self.application
-        device = self.get_android_device(app)
+        platform = self.get_gcm_platform(app)
+        device = self.get_android_device(platform)
         connection = Mock()
         connection.publish.return_value = True
 
@@ -392,7 +378,8 @@ class DeviceTestCase(BaseTestCase):
         USER_DATA = 'user_data'
 
         app = self.application
-        device = self.get_android_device(app)
+        platform = self.get_gcm_platform(app)
+        device = self.get_android_device(platform)
         connection = Mock()
         connection.set_endpoint_attributes.return_value = True
 
@@ -477,7 +464,7 @@ class TopicTestCase(BaseTestCase):
         app = self.application
         platform = self.get_apns_platform(app)
         topic = self.get_topic(app)
-        device = self.get_ios_device(app)
+        device = self.get_ios_device(platform)
         connection = Mock()
         connection.subscribe.return_value = {
             'SubscribeResponse': {
@@ -508,7 +495,7 @@ class TopicTestCase(BaseTestCase):
         app = self.application
         platform = self.get_apns_platform(app)
         topic = self.get_topic(app)
-        device = self.get_ios_device(app)
+        device = self.get_ios_device(platform)
         connection = Mock()
         connection.subscribe.return_value = {
             'SubscribeResponse': {
