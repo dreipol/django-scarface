@@ -421,6 +421,7 @@ class TopicTestCase(BaseTestCase):
         }
 
         topic.register(connection=connection)
+        print(topic.full_name)
 
         self.assertEqual(topic.arn, TEST_ARN_TOKEN_TOPIC)
         connection.create_topic.assert_called_once_with(

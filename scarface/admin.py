@@ -9,6 +9,7 @@ __author__ = 'janmeier'
 class PlatformInline(admin.TabularInline):
     model = Platform
     extra = 0
+    form = PlatformAdminForm
 
 class ApplicationAdmin(admin.ModelAdmin):
     inlines = [PlatformInline]
