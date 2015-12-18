@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-scarface',
-    version='3.0-alpha-3',
+    version='3.0-alpha-4',
     packages=['scarface'],
     include_package_data=True,
     license='MIT License',
