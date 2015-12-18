@@ -387,7 +387,7 @@ class Platform(SNSCRUDMixin, models.Model):
         return self.set_arn_from_response(response)
 
     @DefaultConnection
-    def deregister(self, connection=None):
+    def deregister(self, connection=None, save=True):
         """
         :type connection: SNSConnection
         :param connection: the connection which should be used.
@@ -403,7 +403,7 @@ class Platform(SNSCRUDMixin, models.Model):
                 'Failded to deregister Platform.({0})'.format(success)
             )
         self.arn = None
-        self.save()
+        if save: self.save()
         return success
 
     @DefaultConnection
@@ -485,17 +485,17 @@ class Topic(SNSCRUDMixin, models.Model):
         self.save()
 
     @DefaultConnection
-    def deregister(self, connection=None):
+    def deregister(self, connection=None, save=True):
         if not self.is_registered:
             raise NotRegisteredException
         success = connection.delete_topic(self.arn)
-        if success:
-            self.arn = None
-            self.save()
-        else:
+        if not success:
             raise SNSException(
                 'Failed to deregister Topic. ({0})'.format(success)
             )
+
+        self.arn = None
+        if save: self.save()
 
         return success
 
@@ -658,7 +658,7 @@ class Subscription(SNSCRUDMixin, models.Model):
         self.save()
 
     @DefaultConnection
-    def deregister(self, connection=None):
+    def deregister(self, connection=None, save=True):
         if not self.is_registered:
             raise NotRegisteredException
         success = connection.unsubscribe(self.arn)
@@ -667,7 +667,7 @@ class Subscription(SNSCRUDMixin, models.Model):
                 'Failed to unsubscribe Device from Topic.({0})'.format(success)
             )
         self.arn = None
-        self.save()
+        if save: self.save()
         return success
 
 
