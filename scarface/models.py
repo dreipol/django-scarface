@@ -230,12 +230,14 @@ class Device(SNSCRUDMixin, models.Model):
         return result
 
     @DefaultConnection
-    def deregister(self, connection=None):
+    def deregister(self, connection=None, save=True):
         """
         Dergisters the device from SNS.
         :type connection: SNSConnection
         :param connection: the connection which should be used.
         if the argument isn't set there will be created a default connection
+        :param save: weather the device should be saved, after the device has
+        been deregsitered.
         :return:
         """
         if not self.is_registered:
@@ -246,7 +248,7 @@ class Device(SNSCRUDMixin, models.Model):
                 'Failed to deregister device.({0})'.format(success)
             )
         self.arn = None
-        self.save()
+        if save: self.save()
         return success
 
     @DefaultConnection
