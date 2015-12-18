@@ -20,7 +20,7 @@ def device_deleted(sender, instance, **kwargs):
     Unregisters the instance from amazon sns.
     """
     try:
-        if instance.is_registered and not instance.deregister(safe=False):
+        if instance.is_registered and not instance.deregister(save=False):
             logger.warn("Could not unregister {0} on delete.".format(
                 sender
             ))
