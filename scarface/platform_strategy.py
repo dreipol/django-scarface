@@ -137,7 +137,7 @@ class APNSSandboxPlatformStrategy(PlatformStrategy):
             payload.update(message.extra_payload)
 
         return super(
-            APNPlatformStrategy,
+            APNSSandboxPlatformStrategy,
             self
         ).format_payload(payload)
 
