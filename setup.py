@@ -10,15 +10,17 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-scarface',
-    version='3.0-alpha-5',
+    version='3.0',
     packages=['scarface'],
     include_package_data=True,
     license='MIT License',
     description='Send push notifications to mobile devices using Amazon SNS.',
     long_description=README,
     url='http://www.dreipol.ch/',
+    download_url='ttps://github.com/dreipol/django-scarface/releases/tarball/3.0',
     author='dreipol GmbH',
     author_email='dev@dreipol.ch',
+    keywords=['aws', 'push notification', 'django'],
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
