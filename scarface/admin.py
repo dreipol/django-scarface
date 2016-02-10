@@ -18,6 +18,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 
 class PlatformAdmin(admin.ModelAdmin):
     list_display = ['platform', 'application', 'arn']
+    exclude = ['credential', 'principal']
     form = PlatformAdminForm
 
 

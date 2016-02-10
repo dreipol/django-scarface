@@ -1,23 +1,17 @@
 import logging
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 import json
 from boto.exception import BotoServerError
 import re
 from django.db import models
-
-from scarface.platform_strategy import APNPlatformStrategy, GCMPlatformStrategy, \
-    get_strategies
+from scarface.platform_strategy import get_strategies
 from scarface.utils import DefaultConnection, PushLogger
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
     SNSException, NotRegisteredException
 
+
 logger = logging.getLogger('django_scarface')
 
-# AVAILABLE_PLATFORMS = (
-#     ('APNS', 'Apple Push Notification Service (APNS)'),
-#     ('APNS_SANDBOX', 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'),
-#     ('GCM', 'Google Cloud Messaging (GCM)'),
-# )
 
 class SNSCRUDMixin(object):
 
@@ -179,7 +173,6 @@ class Device(SNSCRUDMixin, models.Model):
     @property
     def arn_key(self):
         return "EndpointArn"
-
 
     @DefaultConnection
     def register(self, custom_user_data='', connection=None):
@@ -669,5 +662,3 @@ class Subscription(SNSCRUDMixin, models.Model):
         self.arn = None
         if save: self.save()
         return success
-
-

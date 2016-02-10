@@ -11,8 +11,10 @@ from boto.exception import BotoServerError
 from django.test import TestCase
 from scarface.exceptions import PlatformNotSupported
 from scarface.platform_strategy import get_strategies, PlatformStrategy
-from scarface.settings import DEFAULT_PLATFORM_STRATEGIES
-from .models import Application, Platform, Topic, Device, Subscription, PushMessage
+from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES
+from scarface.signals import instance_deleted
+from .models import Application, Platform, Topic, Device, Subscription, \
+    PushMessage
 from .utils import DefaultConnection
 
 TEST_ARN_TOKEN = 'test_arn_token'
@@ -44,48 +46,48 @@ class BaseTestCase(TestCase):
     @property
     def application(self):
         return Application.objects.create(
-            name=TEST_APPLICATION_NAME
+                name=TEST_APPLICATION_NAME
         )
 
     def get_apns_platform(self, application):
         return Platform.objects.create(
-            platform='APNS',
-            application=application,
-            credential=TEST_CREDENTIAL,
-            principal=TEST_PRINCIPAL,
-            arn=TEST_ARN_TOKEN_APNS
+                platform='APNS',
+                application=application,
+                credential=TEST_CREDENTIAL,
+                principal=TEST_PRINCIPAL,
+                arn=TEST_ARN_TOKEN_APNS
         )
 
     def get_gcm_platform(self, application):
         return Platform.objects.create(
-            platform='GCM',
-            application=application,
-            credential=TEST_CREDENTIAL,
-            principal=TEST_PRINCIPAL,
-            arn=TEST_ARN_TOKEN_GCM
+                platform='GCM',
+                application=application,
+                credential=TEST_CREDENTIAL,
+                principal=TEST_PRINCIPAL,
+                arn=TEST_ARN_TOKEN_GCM
         )
 
     def get_ios_device(self, platform):
         return Device.objects.create(
-            device_id=TEST_IOS_DEVICE_ID,
-            platform=platform,
-            push_token=TEST_PUSH_TOKEN,
-            arn=TEST_ARN_TOKEN_IOS_DEVICE
+                device_id=TEST_IOS_DEVICE_ID,
+                platform=platform,
+                push_token=TEST_PUSH_TOKEN,
+                arn=TEST_ARN_TOKEN_IOS_DEVICE
         )
 
     def get_android_device(self, platform):
         return Device.objects.create(
-            device_id=TEST_ANDROID_DEVICE_ID,
-            platform=platform,
-            push_token=TEST_PUSH_TOKEN,
-            arn=TEST_ARN_TOKEN_ANDROID_DEVICE
+                device_id=TEST_ANDROID_DEVICE_ID,
+                platform=platform,
+                push_token=TEST_PUSH_TOKEN,
+                arn=TEST_ARN_TOKEN_ANDROID_DEVICE
         )
 
     def get_topic(self, application):
         return Topic.objects.create(
-            name=TEST_TOPIC_NAME,
-            application=application,
-            arn=TEST_ARN_TOKEN_TOPIC,
+                name=TEST_TOPIC_NAME,
+                application=application,
+                arn=TEST_ARN_TOKEN_TOPIC,
         )
 
 
@@ -147,10 +149,10 @@ class PlatformTestCase(BaseTestCase):
 
         connection = Mock()
         platform = Platform.objects.create(
-            platform=PLATFORM,
-            application=application,
-            credential=TEST_CREDENTIAL,
-            principal=TEST_PRINCIPAL,
+                platform=PLATFORM,
+                application=application,
+                credential=TEST_CREDENTIAL,
+                principal=TEST_PRINCIPAL,
         )
 
         connection.create_platform_application.return_value = {
@@ -166,21 +168,21 @@ class PlatformTestCase(BaseTestCase):
 
         self.assertEqual(TEST_ARN_TOKEN_PLATFORM, platform.arn)
         connection.create_platform_application.assert_called_once_with(
-            "{0}_{1}".format(application.name, PLATFORM).lower(),
-            PLATFORM,
-            {
-                'PlatformCredential': TEST_CREDENTIAL,
-                'PlatformPrincipal': TEST_PRINCIPAL
-            }
+                "{0}_{1}".format(application.name, PLATFORM).lower(),
+                PLATFORM,
+                {
+                    'PlatformCredential': TEST_CREDENTIAL,
+                    'PlatformPrincipal': TEST_PRINCIPAL
+                }
         )
 
     def test_register_gcm_platform(self):
         PLATFORM = 'GCM'
         application = self.application
         platform = Platform.objects.create(
-            platform=PLATFORM,
-            application=application,
-            credential=TEST_CREDENTIAL,
+                platform=PLATFORM,
+                application=application,
+                credential=TEST_CREDENTIAL,
         )
 
         connection = Mock()
@@ -197,12 +199,12 @@ class PlatformTestCase(BaseTestCase):
 
         self.assertEqual(TEST_ARN_TOKEN_PLATFORM, platform.arn)
         connection.create_platform_application.assert_called_once_with(
-            "{0}_{1}".format(application.name, PLATFORM).lower(),
-            PLATFORM,
-            {
-                'PlatformCredential': TEST_CREDENTIAL,
-                'PlatformPrincipal': None
-            }
+                "{0}_{1}".format(application.name, PLATFORM).lower(),
+                PLATFORM,
+                {
+                    'PlatformCredential': TEST_CREDENTIAL,
+                    'PlatformPrincipal': None
+                }
         )
 
     def test_deregister(self):
@@ -212,12 +214,13 @@ class PlatformTestCase(BaseTestCase):
 
         platform.deregister(connection)
         connection.delete_platform_application.assert_called_once_with(
-            TEST_ARN_TOKEN_APNS
+                TEST_ARN_TOKEN_APNS
         )
 
         self.assertFalse(platform.is_registered)
 
-    @unittest.skip("Post delete signal and mock connection don't work together.")
+    @unittest.skip(
+            "Post delete signal and mock connection don't work together.")
     def test_delete(self):
         app = self.application
         platform = self.get_apns_platform(app)
@@ -225,7 +228,7 @@ class PlatformTestCase(BaseTestCase):
         platform.delete(connection=connection)
 
         connection.delete_platform_application.assert_called_once_with(
-            TEST_ARN_TOKEN_APNS
+                TEST_ARN_TOKEN_APNS
         )
 
     def test_all_devices(self):
@@ -242,10 +245,10 @@ class PlatformTestCase(BaseTestCase):
 
         def create_device(id, arn):
             return Device.objects.create(
-                device_id=id,
-                platform=platform,
-                push_token=TEST_PUSH_TOKEN,
-                arn=arn
+                    device_id=id,
+                    platform=platform,
+                    push_token=TEST_PUSH_TOKEN,
+                    arn=arn
             )
 
         device_1 = create_device('1', 'arn_1')
@@ -265,10 +268,34 @@ class PlatformTestCase(BaseTestCase):
         devices = platform.all_devices(connection)
 
         connection.list_endpoints_by_platform_application(
-            platform_application_arn=TEST_ARN_TOKEN_APNS,
-            next_token=None
+                platform_application_arn=TEST_ARN_TOKEN_APNS,
+                next_token=None
         )
         self.assertEqual(len(devices), 3)
+
+    def test_send_message(self):
+        app = self.application
+        platform = self.get_apns_platform(app)
+        device = Device.objects.create(
+                device_id=TEST_IOS_DEVICE_ID,
+                platform=platform,
+                push_token=TEST_PUSH_TOKEN,
+                arn=TEST_ARN_TOKEN_IOS_DEVICE
+        )
+        message = PushMessage(
+                badge_count=1,
+                context='url_alert',
+                context_id='none',
+                has_new_content=True,
+                message="Hello world!",
+                sound="default"
+        )
+        connection = Mock()
+        device.send_message(message, connection=connection)
+        connection.publish.assert_called_once_with(
+            message=message,
+            target_arn=TEST_ARN_TOKEN_IOS_DEVICE
+        )
 
 
 class DeviceTestCase(BaseTestCase):
@@ -286,17 +313,17 @@ class DeviceTestCase(BaseTestCase):
         }
 
         device = Device.objects.create(
-            device_id=TEST_DEVICE_ID,
-            push_token=TEST_PUSH_TOKEN,
-            platform=platform
+                device_id=TEST_DEVICE_ID,
+                push_token=TEST_PUSH_TOKEN,
+                platform=platform
         )
 
         device.register(connection=connection)
 
         connection.create_platform_endpoint.assert_called_once_with(
-            TEST_ARN_TOKEN_APNS,
-            TEST_PUSH_TOKEN,
-            custom_user_data="",
+                TEST_ARN_TOKEN_APNS,
+                TEST_PUSH_TOKEN,
+                custom_user_data="",
         )
         self.assertEqual(device.arn, TEST_ARN_TOKEN_IOS_DEVICE)
         self.assertTrue(device.is_registered)
@@ -315,17 +342,17 @@ class DeviceTestCase(BaseTestCase):
         }
 
         device = Device.objects.create(
-            device_id=TEST_DEVICE_ID,
-            platform=platform,
-            push_token=TEST_PUSH_TOKEN,
+                device_id=TEST_DEVICE_ID,
+                platform=platform,
+                push_token=TEST_PUSH_TOKEN,
         )
 
         device.register(connection=connection)
 
         connection.create_platform_endpoint.assert_called_once_with(
-            TEST_ARN_TOKEN_GCM,
-            TEST_PUSH_TOKEN,
-            custom_user_data="",
+                TEST_ARN_TOKEN_GCM,
+                TEST_PUSH_TOKEN,
+                custom_user_data="",
         )
         self.assertEqual(device.arn, TEST_ARN_TOKEN_ANDROID_DEVICE)
         self.assertTrue(device.is_registered)
@@ -340,11 +367,12 @@ class DeviceTestCase(BaseTestCase):
         device.deregister(connection)
 
         connection.delete_endpoint.assert_called_once_with(
-            TEST_ARN_TOKEN_ANDROID_DEVICE
+                TEST_ARN_TOKEN_ANDROID_DEVICE
         )
         self.assertFalse(device.is_registered)
 
-    @unittest.skip("Post delete signal and mock connection don't work together.")
+    @unittest.skip(
+            "Post delete signal and mock connection don't work together.")
     def test_delete(self):
         app = self.application
         platform = self.get_gcm_platform(app)
@@ -355,7 +383,7 @@ class DeviceTestCase(BaseTestCase):
         device.delete()
 
         connection.delete_endpoint.assert_called_once_with(
-            TEST_ARN_TOKEN_ANDROID_DEVICE
+                TEST_ARN_TOKEN_ANDROID_DEVICE
         )
 
     def test_send_message(self):
@@ -368,8 +396,8 @@ class DeviceTestCase(BaseTestCase):
         device.send_message(TEST_MESSAGE, connection=connection)
 
         connection.publish.assert_called_once_with(
-            message=TEST_MESSAGE,
-            target_arn=TEST_ARN_TOKEN_ANDROID_DEVICE
+                message=TEST_MESSAGE,
+                target_arn=TEST_ARN_TOKEN_ANDROID_DEVICE
         )
 
     def test_update(self):
@@ -385,12 +413,12 @@ class DeviceTestCase(BaseTestCase):
         device.update(NEW_PUSH_TOKEN, USER_DATA, connection)
 
         connection.set_endpoint_attributes.assert_called_once_with(
-            TEST_ARN_TOKEN_ANDROID_DEVICE,
-            {
-                'Enabled': True,
-                'Token': NEW_PUSH_TOKEN,
-                'CustomUserData': USER_DATA
-            }
+                TEST_ARN_TOKEN_ANDROID_DEVICE,
+                {
+                    'Enabled': True,
+                    'Token': NEW_PUSH_TOKEN,
+                    'CustomUserData': USER_DATA
+                }
         )
 
 
@@ -399,8 +427,8 @@ class TopicTestCase(BaseTestCase):
         application = self.application
 
         topic = Topic.objects.create(
-            name=TEST_TOPIC_NAME,
-            application=application,
+                name=TEST_TOPIC_NAME,
+                application=application,
         )
         topic.delete()
 
@@ -408,8 +436,8 @@ class TopicTestCase(BaseTestCase):
         application = self.application
 
         topic = Topic.objects.create(
-            name=TEST_TOPIC_NAME,
-            application=application,
+                name=TEST_TOPIC_NAME,
+                application=application,
         )
         connection = Mock()
         connection.create_topic.return_value = {
@@ -424,39 +452,40 @@ class TopicTestCase(BaseTestCase):
 
         self.assertEqual(topic.arn, TEST_ARN_TOKEN_TOPIC)
         connection.create_topic.assert_called_once_with(
-            '_'.join([TEST_APPLICATION_NAME, TEST_TOPIC_NAME])
+                '_'.join([TEST_APPLICATION_NAME, TEST_TOPIC_NAME])
         )
 
     def test_deregister(self):
         app = self.application
         topic = Topic.objects.create(
-            name=TEST_TOPIC_NAME,
-            application = app,
-            arn=TEST_ARN_TOKEN_TOPIC
+                name=TEST_TOPIC_NAME,
+                application=app,
+                arn=TEST_ARN_TOKEN_TOPIC
         )
 
         connection = Mock()
         topic.deregister(connection)
 
         connection.delete_topic.assert_called_once_with(
-            TEST_ARN_TOKEN_TOPIC
+                TEST_ARN_TOKEN_TOPIC
         )
         self.assertFalse(topic.is_registered)
 
-    @unittest.skip("Post delete signal and mock connection don't work together.")
+    @unittest.skip(
+            "Post delete signal and mock connection don't work together.")
     def test_delete(self):
         app = self.application
         topic = Topic.objects.create(
-            name=TEST_TOPIC_NAME,
-            application = app,
-            arn=TEST_ARN_TOKEN_TOPIC
+                name=TEST_TOPIC_NAME,
+                application=app,
+                arn=TEST_ARN_TOKEN_TOPIC
         )
 
         connection = Mock()
         topic.delete(connection=connection)
 
         connection.delete_topic.assert_called_once_with(
-            TEST_ARN_TOKEN_TOPIC
+                TEST_ARN_TOKEN_TOPIC
         )
 
     def test_register_device(self):
@@ -476,15 +505,15 @@ class TopicTestCase(BaseTestCase):
         topic.register_device(device, connection)
 
         connection.subscribe.assert_called_once_with(
-            topic=TEST_ARN_TOKEN_TOPIC,
-            endpoint=TEST_ARN_TOKEN_IOS_DEVICE,
-            protocol='application'
+                topic=TEST_ARN_TOKEN_TOPIC,
+                endpoint=TEST_ARN_TOKEN_IOS_DEVICE,
+                protocol='application'
         )
 
         try:
             subscription = Subscription.objects.get(
-                device=device,
-                topic=topic
+                    device=device,
+                    topic=topic
             )
             self.assertEqual(subscription.arn, TEST_ARN_TOKEN_SUBSCRIPTION)
         except Subscription.DoesNotExist:
@@ -506,8 +535,8 @@ class TopicTestCase(BaseTestCase):
         connection.unsubscribe.return_value = True
         topic.register_device(device, connection)
         subscription_arn = Subscription.objects.get(
-            device=device,
-            topic=topic
+                device=device,
+                topic=topic
         ).arn
 
         try:
@@ -516,17 +545,16 @@ class TopicTestCase(BaseTestCase):
             pass
 
         connection.unsubscribe.assert_called_once_with(
-            subscription_arn
+                subscription_arn
         )
         try:
             subscription = Subscription.objects.get(
-                device=device,
-                topic=topic
+                    device=device,
+                    topic=topic
             )
             self.assertTrue(False)
         except Subscription.DoesNotExist:
             pass
-
 
     def test_send(self):
         MESSAGE = 'test_message'
@@ -536,7 +564,7 @@ class TopicTestCase(BaseTestCase):
         topic = self.get_topic(app)
         connection = Mock()
         message = PushMessage.objects.create(
-            message=MESSAGE
+                message=MESSAGE
         )
 
         topic.send(message, connection)
@@ -548,11 +576,12 @@ class TestStrategy(PlatformStrategy):
     id = 'test'
     pass
 
-class StrategyImportTestCase(TestCase):
 
+class StrategyImportTestCase(TestCase):
     def test_get_strategies(self):
         strategies = get_strategies()
-        self.assertEqual(len(strategies), len(DEFAULT_PLATFORM_STRATEGIES))
+        self.assertEqual(len(strategies),
+                         len(SCARFACE_DEFAULT_PLATFORM_STRATEGIES))
 
     def test_get_strategies_custom(self):
         from django.conf import settings
@@ -561,22 +590,23 @@ class StrategyImportTestCase(TestCase):
         ]
         strategies = get_strategies()
         self.assertEqual(
-            len(strategies),
-            len(
-                DEFAULT_PLATFORM_STRATEGIES
-                + settings.SCARFACE_PLATFORM_STRATEGIES
-            )
+                len(strategies),
+                len(
+                        SCARFACE_DEFAULT_PLATFORM_STRATEGIES
+                        + settings.SCARFACE_PLATFORM_STRATEGIES
+                )
         )
+
 
 @DefaultConnection
 def connection_test(a=None, connection=None):
     return a, connection
 
 
-# class ExtractKeysCommand(TestCase):
-#     def test_command_output(self):
-#         out = StringIO()
-#         call_command("extract_keys", file="local_push.p12", password="bazinga",
-#                      stdout=out)
-#         out_getvalue = out.getvalue()
-#         self.assertIn('SCARFACE_APNS_CERTIFICATE', out_getvalue)
+    # class ExtractKeysCommand(TestCase):
+    #     def test_command_output(self):
+    #         out = StringIO()
+    #         call_command("extract_keys", file="local_push.p12", password="bazinga",
+    #                      stdout=out)
+    #         out_getvalue = out.getvalue()
+    #         self.assertIn('SCARFACE_APNS_CERTIFICATE', out_getvalue)

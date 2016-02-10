@@ -5,12 +5,12 @@ from copy import deepcopy
 
 from django.conf import settings
 
-from scarface.settings import DEFAULT_PLATFORM_STRATEGIES
+from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES
 
 __author__ = 'janmeier'
 
 def get_strategies():
-    strategy_modules = deepcopy(DEFAULT_PLATFORM_STRATEGIES)
+    strategy_modules = deepcopy(SCARFACE_DEFAULT_PLATFORM_STRATEGIES)
     if hasattr(settings, 'SCARFACE_PLATFORM_STRATEGIES'):
         strategy_modules += settings.SCARFACE_PLATFORM_STRATEGIES
 
@@ -41,7 +41,11 @@ class PlatformStrategy(metaclass=ABCMeta):
         super().__init__()
         self.platform = platform_application
 
+
+    ''' id which is used to refere to that strategy'''
     id = ''
+
+    ''' Verbose name of that strategie's service'''
     service_name = ''
 
     def format_payload(self, data):

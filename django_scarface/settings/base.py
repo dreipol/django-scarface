@@ -39,11 +39,11 @@ ALLOWED_HOSTS = []
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'Europe/Zurich'
+TIME_ZONE = 'Europe/London'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-LANGUAGE_CODE = 'de-ch'
+LANGUAGE_CODE = 'en'
 
 SITE_ID = 1
 
@@ -195,15 +195,5 @@ SUIT_CONFIG = {
 
 INTERNAL_IPS = ('0.0.0.0', '127.0.0.1')
 
-SOUTH_MIGRATION_MODULES = {"scarface": "scarface.migrations"}
-
 SCARFACE_APNS_MODE = u"APNS_SANDBOX"
-SCARFACE_SNS_APP_PREFIX = u"Scarface_Test"
 SCARFACE_LOGGING_ENABLED = True
-
-AWS_ACCESS_KEY = "<YOUR_AWS_ACCESS_KEY>"
-AWS_SECRET_ACCESS_KEY = "<YOUR_AWS_SECRET_ACCESS_KEY>"
-AWS_BUCKET = "<YOUR-BUCKET-NAME>"
-SCARFACE_GCM_API_KEY = "<YOUR-GCM-API-KEY>"
-SCARFACE_APNS_CERTIFICATE = "<YOUR-APNS-CERTIFICATE-KEY>"
-SCARFACE_APNS_PRIVATE_KEY = "<YOUR-APNS-PRIVATE-KEY>"

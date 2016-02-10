@@ -15,7 +15,7 @@ logger = logging.getLogger('django_scarface')
 @receiver(post_delete, sender=Platform)
 @receiver(post_delete, sender=Topic)
 @receiver(post_delete, sender=Subscription)
-def device_deleted(sender, instance, **kwargs):
+def instance_deleted(sender, instance, **kwargs):
     """
     Unregisters the instance from amazon sns.
     """
