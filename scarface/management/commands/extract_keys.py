@@ -9,7 +9,7 @@ import subprocess
 import re
 
 regex = re.compile(
-    u'(?P<cert>-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----).*(?P<key>-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----)',
+    u'(?P<cert>-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----).*(?P<key>-----BEGIN (?:RSA )?PRIVATE KEY-----.*-----END (?:RSA )?PRIVATE KEY-----)',
     re.IGNORECASE | re.MULTILINE | re.UNICODE | re.DOTALL)
 
 
