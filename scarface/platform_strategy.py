@@ -35,7 +35,8 @@ def _import_strategy(path):
         mod = getattr(mod, comp)
     return mod
 
-class PlatformStrategy(metaclass=ABCMeta):
+class PlatformStrategy():
+    __metaclass__ = ABCMeta
 
     def __init__(self, platform_application):
         super().__init__()
