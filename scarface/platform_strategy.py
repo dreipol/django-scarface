@@ -2,6 +2,7 @@
 import json
 from abc import ABCMeta, abstractproperty
 from copy import deepcopy
+from six import with_metaclass
 
 from django.conf import settings
 
@@ -35,7 +36,7 @@ def _import_strategy(path):
         mod = getattr(mod, comp)
     return mod
 
-class PlatformStrategy(metaclass=ABCMeta):
+class PlatformStrategy(with_metaclass(ABCMeta)):
 
     def __init__(self, platform_application):
         super().__init__()
