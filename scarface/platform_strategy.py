@@ -39,7 +39,7 @@ def _import_strategy(path):
 
 class PlatformStrategy(with_metaclass(ABCMeta)):
     def __init__(self, platform_application):
-        super().__init__()
+        super(PlatformStrategy, self).__init__()
         self.platform = platform_application
 
     ''' id which is used to refere to that strategy'''
