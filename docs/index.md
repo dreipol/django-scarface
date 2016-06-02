@@ -30,9 +30,10 @@ INSTALLED_APPS = (
 | ``AWS_ACCESS_KEY`` | Acess key of your AWS user*. | Yes | - |
 | ``AWS_SECRET_ACCESS_KEY`` | Secret key of your AWS user. | Yes | - |
 | ``SCARFACE_LOGGING_ENABLED`` | If true the push messages are logged to the DB.| | ``True`` |
-| ``SCARFACE_PLATFORM_STRATEGIES`` | A list of [additional platform strategies](#register-new-platforms) to integrate other AWS platforms.| No | `[]`| 
+| ``SCARFACE_PLATFORM_STRATEGIES`` | A list of [additional platform strategies](#register-new-platforms) to integrate other AWS platforms.| No | `[]`|
+| ``SCARFACE_MESSAGE_TRIM_LENGTH`` | The length of a push notification, defaults to 140 chars. Please note that there are platform specific restrictions.| No | `140`|
 **We assume that user has all the privileges to create Applications, Endpoints and Topics *
-p
+
 
 ## Management Commands
 ### extract_keys
@@ -60,15 +61,15 @@ it. Currently only 'Google Cloud Messaging' and 'Apple Push Notification
 Service' are available. If you wish, you can [add further strategies](#register-new-platforms) to support
 more platforms.
 ```python
-apns_platform = Platform.objects.create( 
-    platform='APNS', 
-    application=app, 
+apns_platform = Platform.objects.create(
+    platform='APNS',
+    application=app,
     arn=TEST_ARN_TOKEN_APNS
 )
 
-gcm_platform = Platform.objects.create( 
-    platform='GCM', 
-    application=app, 
+gcm_platform = Platform.objects.create(
+    platform='GCM',
+    application=app,
     arn=TEST_ARN_TOKEN_APNS
 )
 ```
@@ -81,7 +82,7 @@ The available values for the platform parameter are:
 | ``APNS_SANDBOX`` | Apple Push Notification Service Sandbox |
 
 ### Create Platforms
-Having a setup platform you are now ready to register new devices to that platform. 
+Having a setup platform you are now ready to register new devices to that platform.
 ```python
 apple_device = Device.objects.create(
     device_id=<device_id>,
@@ -99,7 +100,7 @@ android_device.register()
 ```
 
 ### Create Topics
-Before you can subscribe a device to a topic we have to create that topic. 
+Before you can subscribe a device to a topic we have to create that topic.
 ```python
 topic = Topic.objects.create(
     name='test_topic',
@@ -126,11 +127,11 @@ Register a device like seen above.
 Send a push message:
 ```python
 message = PushMessage(
-    badge_count=1, 
-    context='url_alert', 
+    badge_count=1,
+    context='url_alert',
     context_id='none',
-    has_new_content=True, 
-    message="Hello world!", 
+    has_new_content=True,
+    message="Hello world!",
     sound="default"
 )
 ios_device.send(message)
@@ -141,7 +142,7 @@ If logging is enabled, all sent push messages are logged in the table scarface_p
 
 
 ## Register New Platforms
-If you want to register a new platform create a new subclass of the abstract ``PlatformStrategy`` class. Take a look on an existin implementation for an example. 
+If you want to register a new platform create a new subclass of the abstract ``PlatformStrategy`` class. Take a look on an existin implementation for an example.
 
 Then add it to the ``SCARFACE_PLATFORM_STRATEGIES`` settings parameter:
 ```
@@ -156,7 +157,7 @@ By giving you own class the same ID as the one of an existing implementation, yo
 
 _How do I change the credentials?_
 
-There is no direct way yet to exchange the credentials. To exchange the API credentials you'll have to replace the old one in the settings file and in the AWS console manually. 
+There is no direct way yet to exchange the credentials. To exchange the API credentials you'll have to replace the old one in the settings file and in the AWS console manually.
 
 Now have fun using this library and [push it to the limit](https://www.youtube.com/watch?v=9D-QD_HIfjA).
 

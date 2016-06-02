@@ -1,5 +1,9 @@
 # Change Log
 
+## [Unreleased]
+### Changed
+-  The message trim length can now be defined in the settings, see #4 for more details.
+
 ## [3.0-alpha7]
 ### Changed
 -  Formatting issues and proper Changelog introduction

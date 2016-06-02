@@ -6,7 +6,7 @@ from copy import deepcopy
 from django.conf import settings
 from six import with_metaclass
 
-from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES
+from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES, SCARFACE_DEFAULT_MESSAGE_TRIM_LENGTH
 
 
 def get_strategies():
@@ -81,9 +81,12 @@ class PlatformStrategy(with_metaclass(ABCMeta)):
 
     def trim_message(self, message):
         import sys
+        trim_length = SCARFACE_DEFAULT_MESSAGE_TRIM_LENGTH
+        if hasattr(settings, 'SCARFACE_MESSAGE_TRIM_LENGTH'):
+            trim_length = settings.SCARFACE_MESSAGE_TRIM_LENGTH
 
-        if sys.getsizeof(message) > 140:
-            while sys.getsizeof(message) > 140:
+        if sys.getsizeof(message) > trim_length:
+            while sys.getsizeof(message) > trim_length:
                 message = message[:-3]
             message += '...'
         return message
