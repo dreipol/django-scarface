@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta
 from copy import deepcopy
-from six import with_metaclass
 
 from django.conf import settings
+from six import with_metaclass
 
 from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES
 
-__author__ = 'janmeier'
 
 def get_strategies():
     strategy_modules = deepcopy(SCARFACE_DEFAULT_PLATFORM_STRATEGIES)
@@ -21,11 +20,12 @@ def get_strategies():
         strategies[strategy_class.id] = strategy_class
     return strategies
 
+
 def get_strategy_choices():
     strategies = get_strategies()
     choices = {}
     for id, strategy_class in strategies.items():
-        choices[id]  = strategy_class.service_name
+        choices[id] = strategy_class.service_name
     return choices
 
 
@@ -36,12 +36,11 @@ def _import_strategy(path):
         mod = getattr(mod, comp)
     return mod
 
-class PlatformStrategy(with_metaclass(ABCMeta)):
 
+class PlatformStrategy(with_metaclass(ABCMeta)):
     def __init__(self, platform_application):
         super().__init__()
         self.platform = platform_application
-
 
     ''' id which is used to refere to that strategy'''
     id = ''
@@ -53,7 +52,7 @@ class PlatformStrategy(with_metaclass(ABCMeta)):
         return {self.platform.platform: json.dumps(data)}
 
     def format_push(self, badgeCount, context, context_id, has_new_content, message,
-                sound):
+            sound):
         if message:
             message = self.trim_message(message)
 
@@ -80,7 +79,7 @@ class PlatformStrategy(with_metaclass(ABCMeta)):
 
         return payload
 
-    def trim_message(self,message):
+    def trim_message(self, message):
         import sys
 
         if sys.getsizeof(message) > 140:
@@ -91,7 +90,6 @@ class PlatformStrategy(with_metaclass(ABCMeta)):
 
 
 class APNPlatformStrategy(PlatformStrategy):
-
     id = 'APNS'
     service_name = 'Apple Push Notification Service (APNS)'
 
@@ -118,8 +116,8 @@ class APNPlatformStrategy(PlatformStrategy):
             self
         ).format_payload(payload)
 
-class APNSSandboxPlatformStrategy(PlatformStrategy):
 
+class APNSSandboxPlatformStrategy(PlatformStrategy):
     id = 'APNS_SANDBOX'
     service_name = 'Apple Push Notification Service Sandbox (APNS_SANDBOX)'
 
@@ -148,7 +146,6 @@ class APNSSandboxPlatformStrategy(PlatformStrategy):
 
 
 class GCMPlatformStrategy(PlatformStrategy):
-
     id = 'GCM'
     service_name = 'Google Cloud Messaging (GCM)'
 
