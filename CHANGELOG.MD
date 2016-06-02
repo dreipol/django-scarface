@@ -1,8 +1,11 @@
 # Change Log
 
-## [Unreleased]
+## [3.0-a8]
 ### Changed
 -  The message trim length can now be defined in the settings, see #4 for more details.
+### Added
+-  The region can now be defined in the settings
+
 
 ## [3.0-alpha7]
 ### Changed
