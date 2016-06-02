@@ -1,8 +1,12 @@
 import os
+import sys
 
 from setuptools import setup
 
-README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
+if sys.version_info >= (3, 0):
+    README = open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8').read()
+else:
+    README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 
 reqs = ['boto>=2.34.0', ]
 
