@@ -29,6 +29,7 @@ INSTALLED_APPS = (
 |------|-------------|-----------|---------|
 | ``AWS_ACCESS_KEY`` | Acess key of your AWS user*. | Yes | - |
 | ``AWS_SECRET_ACCESS_KEY`` | Secret key of your AWS user. | Yes | - |
+| ``SCARFACE_REGION_NAME`` | The region your SNS application is located | Yes | 'eu-west-1' |
 | ``SCARFACE_LOGGING_ENABLED`` | If true the push messages are logged to the DB.| | ``True`` |
 | ``SCARFACE_PLATFORM_STRATEGIES`` | A list of [additional platform strategies](#register-new-platforms) to integrate other AWS platforms.| No | `[]`|
 | ``SCARFACE_MESSAGE_TRIM_LENGTH`` | The length of a push notification, defaults to 140 chars. Please note that there are platform specific restrictions.| No | `140`|
