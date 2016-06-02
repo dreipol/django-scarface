@@ -1,5 +1,18 @@
 # Change Log
 
+## [3.0-alpha7]
+### Changed
+-  Formatting issues and proper Changelog introduction
+
+### Fixed
+-  Python 2.7 Support
+
+### Removed
+-  Python 2.6 Support
+
+## [3.0-alpha2] - [3.0-alpha6]
+### Fixes
+-  Various bugfixes
 
 ## [3.0-alpha1]
 ### Removed
