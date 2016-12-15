@@ -20,18 +20,18 @@ class Command(BaseCommand):
         parser.add_argument('-f', '--file',
                             action='store',
                             dest='file',
-                            type="string",
+                            type=str,
                             help='The APNS .p12 file')
         parser.add_argument('-p', '--password',
                             action='store',
                             dest='password',
-                            type="string",
+                            type=str,
                             help='The associated password',
                             )
         parser.add_argument('-e', '--encoding',
                             action='store',
                             dest='encoding',
-                            type="string",
+                            type=str,
                             help='The used encoding',
                             default='utf-8'
                             )
