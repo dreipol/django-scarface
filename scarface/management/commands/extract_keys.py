@@ -14,29 +14,27 @@ regex = re.compile(
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('-f', '--file',
-                    action='store',
-                    dest='file',
-                    type="string",
-                    help='The APNS .p12 file',
-
-        ),
-        make_option('-p', '--password',
-                    action='store',
-                    dest='password',
-                    type="string",
-                    help='The associated password',
-        ),
-         make_option('-e', '--encoding',
-                    action='store',
-                    dest='encoding',
-                    type="string",
-                    help='The used encoding',
-                    default = 'utf-8'
-        ),
-    )
     help = 'Extracts the private key and ssl certificate from an APNS p12 file'
+
+    def add_arguments(self, parser):
+        parser.add_argument('-f', '--file',
+                            action='store',
+                            dest='file',
+                            type="string",
+                            help='The APNS .p12 file')
+        parser.add_argument('-p', '--password',
+                            action='store',
+                            dest='password',
+                            type="string",
+                            help='The associated password',
+                            )
+        parser.add_argument('-e', '--encoding',
+                            action='store',
+                            dest='encoding',
+                            type="string",
+                            help='The used encoding',
+                            default='utf-8'
+                            )
 
     def handle(self, *args, **options):
         file_name = options['file']
