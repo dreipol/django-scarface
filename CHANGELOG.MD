@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.2]
+### Fixed 
+- extract_keys Command in django >= 1.10 (Thanks, nanorepublica)
+
 ## [3.0.1]
 ### Fixed
 -  Default installation version
