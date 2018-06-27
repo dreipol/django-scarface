@@ -4,6 +4,7 @@ from abc import ABCMeta
 from copy import deepcopy
 
 from django.conf import settings
+from django.utils.module_loading import import_string
 from six import with_metaclass
 
 from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES, SCARFACE_DEFAULT_MESSAGE_TRIM_LENGTH
@@ -16,7 +17,7 @@ def get_strategies():
 
     strategies = {}
     for strategy_path in strategy_modules:
-        strategy_class = _import_strategy(strategy_path)
+        strategy_class = import_string(strategy_path)
         strategies[strategy_class.id] = strategy_class
     return strategies
 
@@ -27,14 +28,6 @@ def get_strategy_choices():
     for id, strategy_class in strategies.items():
         choices[id] = strategy_class.service_name
     return choices
-
-
-def _import_strategy(path):
-    components = path.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
 
 
 class PlatformStrategy(with_metaclass(ABCMeta)):
@@ -112,6 +105,10 @@ class APNPlatformStrategy(PlatformStrategy):
         )
 
         if message.extra_payload:
+            if 'aps' in message.extra_payload:
+                # Handle `aps` updating seperately to not loose
+                # any alert props
+                payload['aps'].update(message.extra_payload.pop('aps'))
             payload.update(message.extra_payload)
 
         return super(

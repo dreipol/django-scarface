@@ -125,7 +125,7 @@ TEMPLATE_DIRS = (
 )
 
 DJANGO_APPS = (
-    'suit',
+    # 'suit',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

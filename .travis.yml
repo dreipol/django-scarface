@@ -1,0 +1,26 @@
+language: python
+
+python:
+  - "3.6"
+
+services: postgres
+
+env:
+  global:
+    - DJANGO_SETTINGS_MODULE="django_scarface.settings.test"
+    - PIP_USE_MIRRORS=true
+    - BUILD_ON_TRAVIS=true
+  matrix:
+    - DJANGO=1.8 DB=postgres
+
+#commands to install dependencies
+install:
+  - pip install -q -r requirements.txt
+  - pip install -q Django==$DJANGO
+
+before_script:
+  - psql -c 'CREATE USER django WITH superuser PASSWORD 'django''
+
+#command to run the test suite
+script:
+  - python manage.py test

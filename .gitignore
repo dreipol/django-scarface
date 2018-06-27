@@ -65,3 +65,7 @@ target/
 .LSOverride
 Icon
 django_scarface/settings/local.py
+
+bin/
+pip-selfcheck.json
+pyvenv.cfg

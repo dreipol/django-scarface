@@ -5,17 +5,18 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 import unittest
+import json
 from unittest.mock import Mock
 
 from boto.exception import BotoServerError
 from django.test import TestCase
 from scarface.exceptions import PlatformNotSupported
-from scarface.platform_strategy import get_strategies, PlatformStrategy
+from scarface.platform_strategy import get_strategies, PlatformStrategy, APNPlatformStrategy
 from scarface.settings import SCARFACE_DEFAULT_PLATFORM_STRATEGIES
 from scarface.signals import instance_deleted
-from .models import Application, Platform, Topic, Device, Subscription, \
+from scarface.models import Application, Platform, Topic, Device, Subscription, \
     PushMessage
-from .utils import DefaultConnection
+from scarface.utils import DefaultConnection
 
 TEST_ARN_TOKEN = 'test_arn_token'
 TEST_PUSH_TOKEN = 'test_push_token'
@@ -596,6 +597,28 @@ class StrategyImportTestCase(TestCase):
                         + settings.SCARFACE_PLATFORM_STRATEGIES
                 )
         )
+
+
+class StrategyTestCase(TestCase):
+    def test_extra_apns(self):
+        MESSAGE = 'Hello World'
+        platform = Mock()
+        platform.platform = 'apple'
+        apns = APNPlatformStrategy(platform)
+        message = PushMessage.objects.create(
+            message=MESSAGE,
+            extra_payload={
+                'aps': {
+                    'mutable-content': 1
+                }
+            }
+        )
+        send = apns.format_payload(message)
+        self.assertEqual(json.loads(send['apple'])['aps'], {
+            'alert': 'Hello World',
+            'badge': 0,
+            'content-available': False,
+            'mutable-content': 1})
 
 
 @DefaultConnection
