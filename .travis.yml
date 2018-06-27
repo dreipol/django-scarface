@@ -19,7 +19,7 @@ install:
   - pip install -q Django==$DJANGO
 
 before_script:
-  - psql -c 'CREATE USER django WITH superuser PASSWORD 'django''
+  - psql -c 'CREATE USER django WITH superuser PASSWORD 'django'' -U postgres
 
 #command to run the test suite
 script:
