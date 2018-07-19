@@ -1,0 +1,41 @@
+language: python
+
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7-dev"
+
+sudo: false
+
+env:
+  - DJANGO=1.11
+  - DJANGO=2.0
+  - DJANGO=2.1
+  - DJANGO=master
+
+matrix:
+  fast_finish: true
+  exclude:
+    - python: "3.7-dev"
+      env: DJANGO=1.11
+
+  allow_failures:
+    - env: DJANGO=2.0
+    - env: DJANGO=2.1
+    - env: DJANGO=master
+    - python: "3.7-dev"
+
+install: pip install tox tox-travis codecov
+
+script: tox
+
+after_success:
+  - codecov -e TOXENV,DJANGO
+
+notifications:
+  slack:
+    rooms:
+      - f4s:u17h2Cc7RhhHNtypnAu7jbgY#dev
+    on_success: change
+    on_failure: always
+  email: false
