@@ -1,0 +1,8 @@
+pylint==1.4.0
+pep8==1.5.7
+django-apptemplates==0.0.1
+boto==2.34.0
+mkdocs==0.15.3
+six==1.10.0
+pytest
+pytest-django

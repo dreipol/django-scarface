@@ -65,3 +65,5 @@ target/
 .LSOverride
 Icon
 django_scarface/settings/local.py
+/.pytest_cache/v/cache/lastfailed
+/.pytest_cache/v/cache/nodeids
