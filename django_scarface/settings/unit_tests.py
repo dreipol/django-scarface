@@ -1,5 +1,21 @@
-# -*- coding: utf-8 -*-
-__author__ = 'janmeier'
+from .base import *
 
-AWS_ACCESS_KEY = "dummy-access-key"
-AWS_SECRET_ACCESS_KEY = "dummy-secret-access-key"
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:"
+    }
+}
+
+
+DJANGO_APPS = (
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.sites",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+)
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

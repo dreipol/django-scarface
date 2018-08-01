@@ -4,6 +4,7 @@
 Send push notifications to mobile devices using Amazon SNS
 
 [![Documentation Status](https://readthedocs.org/projects/django-scarface/badge/?version=latest)](https://readthedocs.org/projects/django-scarface/?badge=latest)
+[![Build Status](https://travis-ci.org/dreipol/django-scarface.svg?branch=master)](https://travis-ci.org/dreipol/django-scarface)
 
 Documentation
 -----------

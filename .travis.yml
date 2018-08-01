@@ -1,26 +1,36 @@
 language: python
 
 python:
+  - "3.5"
   - "3.6"
+  - "3.7-dev"
 
-services: postgres
+sudo: false
 
 env:
-  global:
-    - DJANGO_SETTINGS_MODULE="django_scarface.settings.test"
-    - PIP_USE_MIRRORS=true
-    - BUILD_ON_TRAVIS=true
-  matrix:
-    - DJANGO=1.8 DB=postgres
+  - DJANGO=1.11
+  - DJANGO=2.0
+  - DJANGO=2.1
+  - DJANGO=master
 
-#commands to install dependencies
-install:
-  - pip install -q -r requirements.txt
-  - pip install -q Django==$DJANGO
+matrix:
+  fast_finish: true
+  exclude:
+    - python: "3.7-dev"
+      env: DJANGO=1.11
 
-before_script:
-  - psql -c "CREATE USER django WITH superuser PASSWORD 'django'" -U postgres
+  allow_failures:
+    - env: DJANGO=2.0
+    - env: DJANGO=2.1
+    - env: DJANGO=master
+    - python: "3.7-dev"
 
-#command to run the test suite
-script:
-  - python manage.py test
+install: pip install tox tox-travis codecov
+
+script: tox
+
+after_success:
+  - codecov -e TOXENV,DJANGO
+
+notifications:
+  email: false
