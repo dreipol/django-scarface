@@ -105,11 +105,12 @@ class APNPlatformStrategy(PlatformStrategy):
         )
 
         if message.extra_payload:
-            if 'aps' in message.extra_payload:
+            extra = message.extra_payload.copy()
+            if 'aps' in message.extra:
                 # Handle `aps` updating separately to not loose
                 # any alert props
-                payload['aps'].update(message.extra_payload.get('aps'))
-            payload.update(message.extra_payload)
+                payload['aps'].update(extra.pop('aps'))
+            payload.update(extra)
 
         return super(
             APNPlatformStrategy,
