@@ -1,4 +1,9 @@
 # Change Log
+## [3.1]
+### Changed
+- Handle aps-extra correctly: 
+There are some notifications which require adding special flags to the aps dictionary, for example "mutable-content": 1. 
+   [Allow proper APS dictionary updating](https://github.com/dreipol/django-scarface/pull/25)
 
 ## [3.0.2]
 ### Fixed 

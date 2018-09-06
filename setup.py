@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 from setuptools import setup
@@ -13,9 +14,21 @@ reqs = ['boto>=2.34.0', ]
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+
+def get_version(*file_paths):
+    """Retrieves the version from djangocms_spa/__init__.py"""
+    filename = os.path.join(os.path.dirname(__file__), *file_paths)
+    version_file = open(filename).read()
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError('Unable to find version string.')
+
+
 setup(
     name='django-scarface',
-    version='3.0.2',
+    version=get_version("django_scarface", "__init__.py"),
     packages=['scarface'],
     include_package_data=True,
     license='MIT License',
