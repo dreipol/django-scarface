@@ -145,6 +145,7 @@ class Device(SNSCRUDMixin, models.Model):
 
     platform = models.ForeignKey(
         to='Platform',
+        on_delete=models.CASCADE,
         related_name='devices'
     )
 
@@ -307,6 +308,7 @@ class Platform(SNSCRUDMixin, models.Model):
 
     application = models.ForeignKey(
         to=Application,
+        on_delete=models.CASCADE,
         related_name='platforms'
     )
 
@@ -443,6 +445,7 @@ class Topic(SNSCRUDMixin, models.Model):
     )
     application = models.ForeignKey(
         to=Application,
+        on_delete=models.CASCADE,
         related_name='topics'
     )
     arn = models.CharField(

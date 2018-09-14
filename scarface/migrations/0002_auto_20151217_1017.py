@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
                 ('credential', models.CharField(null=True, max_length=255, blank=True)),
                 ('principal', models.CharField(null=True, max_length=255, blank=True)),
-                ('application', models.ForeignKey(to='scarface.Application', related_name='platforms')),
+                ('application', models.ForeignKey(to='scarface.Application', on_delete=models.CASCADE, related_name='platforms')),
             ],
             bases=(scarface.models.SNSCRUDMixin, models.Model),
         ),
@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
-                ('device', models.ForeignKey(to='scarface.Device')),
+                ('device', models.ForeignKey(to='scarface.Device', on_delete=models.CASCADE)),
             ],
             bases=(scarface.models.SNSCRUDMixin, models.Model),
         ),
@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
                 ('name', models.CharField(max_length=64)),
                 ('arn', models.CharField(null=True, max_length=255, blank=True)),
-                ('application', models.ForeignKey(to='scarface.Application', related_name='topics')),
+                ('application', models.ForeignKey(to='scarface.Application', on_delete=models.CASCADE, related_name='topics')),
                 ('devices', models.ManyToManyField(to='scarface.Device', through='scarface.Subscription')),
             ],
             bases=(scarface.models.SNSCRUDMixin, models.Model),
@@ -79,12 +79,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='subscription',
             name='topic',
-            field=models.ForeignKey(to='scarface.Topic'),
+            field=models.ForeignKey(to='scarface.Topic', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='device',
             name='platform',
-            field=models.ForeignKey(to='scarface.Platform', related_name='devices'),
+            field=models.ForeignKey(to='scarface.Platform', on_delete=models.CASCADE, related_name='devices'),
         ),
         migrations.AddField(
             model_name='device',
