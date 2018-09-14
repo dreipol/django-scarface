@@ -1,4 +1,11 @@
 # Change Log
+## [3.2]
+### Breaking changes
+- django 2.0+ Compatibility  
+   [Django 2.0+ compatibility](https://github.com/dreipol/django-scarface/pull/28)
+- Dropping support for Python 2.7
+
+
 ## [3.1]
 ### Changed
 - Handle aps-extra correctly: 

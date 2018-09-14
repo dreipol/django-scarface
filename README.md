@@ -25,6 +25,7 @@ https://pypi.python.org/pypi/django-scarface
 
 Contributors
 ------------
+[@browniebroke](https://github.com/browniebroke)
 [@kennydude](https://github.com/kennydude)
 [@nanorepublica](https://github.com/nanorepublica)
 [@J0hn5mith](https://github.com/J0hn5mith)
