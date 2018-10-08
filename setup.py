@@ -28,7 +28,7 @@ def get_version(*file_paths):
 
 setup(
     name='django-scarface',
-    version=get_version("django_scarface", "__init__.py"),
+    version=get_version("scarface", "__init__.py"),
     packages=['scarface'],
     include_package_data=True,
     license='MIT License',

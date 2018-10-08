@@ -1,4 +1,7 @@
 # Change Log
+## [3.2.1]
+- Fix installation error
+
 ## [3.2]
 ### Breaking changes
 - django 2.0+ Compatibility  
