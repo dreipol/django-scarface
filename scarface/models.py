@@ -1,8 +1,9 @@
 import logging
 from abc import abstractmethod, abstractproperty
 import json
-from boto.exception import BotoServerError
 import re
+
+from botocore.exceptions import BotoCoreError
 from django.db import models
 from scarface.platform_strategy import get_strategies
 from scarface.utils import DefaultConnection, PushLogger
@@ -15,7 +16,8 @@ logger = logging.getLogger('django_scarface')
 
 class SNSCRUDMixin(object):
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def resource_name(self):
         pass
 
@@ -182,9 +184,9 @@ class Device(SNSCRUDMixin, models.Model):
         '''
         self.platform.is_registered_or_register()
         response = connection.create_platform_endpoint(
-            self.platform.arn,
-            self.push_token,
-            custom_user_data=custom_user_data
+            PlatformApplicationArn=self.platform.arn,
+            Token=self.push_token,
+            CustomUserData=custom_user_data
         )
         success = self.set_arn_from_response(response)
         if not success:
@@ -208,7 +210,7 @@ class Device(SNSCRUDMixin, models.Model):
             try:
                 result = self.register(custom_user_data, connection)
             # Heavily inspired by http://stackoverflow.com/a/28316993/270265
-            except BotoServerError as err:
+            except BotoCoreError as err:
                 result_re = re.compile(r'Endpoint(.*)already', re.IGNORECASE)
                 result = result_re.search(err.message)
                 if result:
@@ -236,7 +238,7 @@ class Device(SNSCRUDMixin, models.Model):
         """
         if not self.is_registered:
             raise NotRegisteredException()
-        success = connection.delete_endpoint(self.arn)
+        success = connection.delete_endpoint(EndpointArn=self.arn)
         if not success:
             SNSException(
                 'Failed to deregister device.({0})'.format(success)
@@ -249,7 +251,7 @@ class Device(SNSCRUDMixin, models.Model):
     def send_message(self, message, connection=None):
         if not self.is_registered:
             raise NotRegisteredException
-        return connection.publish(message=message, target_arn=self.arn)
+        return connection.publish(Message=message, TargetArn=self.arn)
 
     @PushLogger
     @DefaultConnection
@@ -265,9 +267,9 @@ class Device(SNSCRUDMixin, models.Model):
         push_message = self.platform.format_payload(push_message)
         json_string = json.dumps(push_message)
         return connection.publish(
-            message=json_string,
-            target_arn=self.arn,
-            message_structure="json"
+            Message=json_string,
+            TargetArn=self.arn,
+            MessageStructure="json"
         )
 
     @DefaultConnection
@@ -285,7 +287,7 @@ class Device(SNSCRUDMixin, models.Model):
         attributes = {"Enabled": True, "Token": new_token}
         if custom_user_data:
             attributes["CustomUserData"] = custom_user_data
-        answer = connection.set_endpoint_attributes(self.arn, attributes)
+        answer = connection.set_endpoint_attributes(EndpointArn=self.arn, Attributes=attributes)
         self.is_enabled = True
         self.push_token = new_token
         return answer
@@ -371,9 +373,9 @@ class Platform(SNSCRUDMixin, models.Model):
         """
 
         response = connection.create_platform_application(
-            self.name,
-            self.platform,
-            self.attributes
+            Name=self.name,
+            Platform=self.platform,
+            Attributes=self.attributes
         )
         if not response:
             raise SNSException(
@@ -392,7 +394,7 @@ class Platform(SNSCRUDMixin, models.Model):
         if not self.is_registered:
             raise NotRegisteredException
 
-        success = connection.delete_platform_application(self.arn)
+        success = connection.delete_platform_application(PlatformApplicationArn=self.arn)
         if not success:
             SNSException(
                 'Failded to deregister Platform.({0})'.format(success)
@@ -413,9 +415,8 @@ class Platform(SNSCRUDMixin, models.Model):
         endpoint_arns = list()
 
         def get_next(nexttoken):
-            response = connection.list_endpoints_by_platform_application(
-                platform_application_arn=self.arn,
-                next_token=nexttoken)
+            response = connection.list_endpoints_by_platform_application(PlatformApplicationArn=self.arn,
+                                                                         NextToken=nexttoken)
             result = response[u'ListEndpointsByPlatformApplicationResponse'][
                 u'ListEndpointsByPlatformApplicationResult']
             endpoints = result[u'Endpoints']
@@ -472,7 +473,7 @@ class Topic(SNSCRUDMixin, models.Model):
     @DefaultConnection
     def register(self, connection=None):
 
-        response = connection.create_topic(self.full_name)
+        response = connection.create_topic(Name=self.full_name)
         if not response:
             raise SNSException(
                 'Failed to register Topic. ({0})'.format(response)
@@ -484,7 +485,7 @@ class Topic(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None, save=True):
         if not self.is_registered:
             raise NotRegisteredException
-        success = connection.delete_topic(self.arn)
+        success = connection.delete_topic(TopicArn=self.arn)
         if not success:
             raise SNSException(
                 'Failed to deregister Topic. ({0})'.format(success)
@@ -536,8 +537,7 @@ class Topic(SNSCRUDMixin, models.Model):
         subscriptions_list = list()
 
         def get_next(nexttoken):
-            response = connection.get_all_subscriptions_by_topic(
-                topic=self.arn, next_token=nexttoken)
+            response = connection.list_subscriptions_by_topic(TopicArn=self.arn, NextToken=nexttoken)
             result = response["ListSubscriptionsByTopicResponse"][
                 "ListSubscriptionsByTopicResult"]
             subs = result[u'Subscriptions']
@@ -572,9 +572,9 @@ class Topic(SNSCRUDMixin, models.Model):
         payload["default"] = push_message.message
         json_string = json.dumps(payload)
         return connection.publish(
-            message=json_string,
-            topic=self.arn,
-            message_structure="json"
+            Message=json_string,
+            TopicArn=self.arn,
+            MessageStructure="json"
         )
 
 
@@ -642,9 +642,9 @@ class Subscription(SNSCRUDMixin, models.Model):
         self.device.is_registered_or_register()
         self.topic.is_registered_or_register()
         success = connection.subscribe(
-            topic=self.topic.arn,
-            endpoint=self.device.arn,
-            protocol="application"
+            TopicArn=self.topic.arn,
+            Endpoint=self.device.arn,
+            Protocol="application"
         )
         if not success:
             raise SNSException(
@@ -657,7 +657,7 @@ class Subscription(SNSCRUDMixin, models.Model):
     def deregister(self, connection=None, save=True):
         if not self.is_registered:
             raise NotRegisteredException
-        success = connection.unsubscribe(self.arn)
+        success = connection.unsubscribe(SubscriptionArn=self.arn)
         if not success:
             raise SNSException(
                 'Failed to unsubscribe Device from Topic.({0})'.format(success)

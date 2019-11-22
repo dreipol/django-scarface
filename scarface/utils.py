@@ -2,7 +2,8 @@
 import inspect
 from functools import partial
 
-from boto import sns
+import boto3
+from botocore.client import BaseClient
 from django.conf import settings
 
 __author__ = 'dreipol GmbH'
@@ -50,15 +51,14 @@ class PushLogger(Decorator):
 
     def __call__(self, *args, **kwargs):
         call_kwargs = inspect.getcallargs(self.original_function, *args,
-            **kwargs)
+                                          **kwargs)
         push_message = call_kwargs.get('push_message')
         self.obj.sign(push_message)
         if logging_enabled():
             push_message.save()
         return self.function(*args, **kwargs)
 
-
-def get_sns_connection():
+def get_sns_connection() -> BaseClient:
     """
     Creates a new AWS connection based upon the credentials defined in the django configuration
     :param region: the region of the DynamoDB, defaults to Ireland
@@ -66,11 +66,10 @@ def get_sns_connection():
     """
 
     region = settings.SCARFACE_REGION_NAME if hasattr(settings, "SCARFACE_REGION_NAME") else 'eu-west-1'
-
-    return sns.connect_to_region(
-        region, aws_access_key_id=settings.AWS_ACCESS_KEY,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
-    )
+    sns = boto3.client('sns', aws_access_key_id=settings.AWS_ACCESS_KEY,
+                       aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                       region_name=region)
+    return sns
 
 
 def logging_enabled():
