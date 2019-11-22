@@ -65,8 +65,7 @@ class SNSCRUDMixin(object):
         """
         success = False
         try:
-            self.arn = response_dict[self.response_key][self.result_key][
-                self.arn_key]
+            self.arn = response_dict[self.arn_key]
             success = True
         except KeyError:
             pass
