@@ -4,5 +4,5 @@ pylint==2.4.4
 pep8==1.7.1
 boto3==1.10.25
 django-apptemplates==1.4
-mkdocs==0.15.3
+mkdocs==1.0.4
 six==1.13.0

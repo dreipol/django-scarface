@@ -34,6 +34,7 @@ setup(
     license='MIT License',
     description='Send push notifications to mobile devices using Amazon SNS.',
     long_description=README,
+    long_description_content_type='text/markdown',
     url='http://www.dreipol.ch/',
     author='dreipol GmbH',
     author_email='dev@dreipol.ch',
