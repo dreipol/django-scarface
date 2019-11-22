@@ -416,7 +416,7 @@ class DeviceTestCase(BaseTestCase):
         connection.set_endpoint_attributes.assert_called_once_with(
                 TEST_ARN_TOKEN_ANDROID_DEVICE,
                 {
-                    'Enabled': True,
+                    'Enabled': "true",
                     'Token': NEW_PUSH_TOKEN,
                     'CustomUserData': USER_DATA
                 }

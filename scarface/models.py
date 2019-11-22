@@ -1,15 +1,14 @@
-import logging
-from abc import abstractmethod, abstractproperty
 import json
+import logging
 import re
+from abc import abstractmethod
 
-from botocore.exceptions import BotoCoreError
 from django.db import models
-from scarface.platform_strategy import get_strategies
-from scarface.utils import DefaultConnection, PushLogger
+
 from scarface.exceptions import SNSNotCreatedException, PlatformNotSupported, \
     SNSException, NotRegisteredException
-
+from scarface.platform_strategy import get_strategies
+from scarface.utils import DefaultConnection, PushLogger
 
 logger = logging.getLogger('django_scarface')
 
@@ -209,9 +208,9 @@ class Device(SNSCRUDMixin, models.Model):
             try:
                 result = self.register(custom_user_data, connection)
             # Heavily inspired by http://stackoverflow.com/a/28316993/270265
-            except BotoCoreError as err:
+            except connection.exceptions.InvalidParameterException as err:
                 result_re = re.compile(r'Endpoint(.*)already', re.IGNORECASE)
-                result = result_re.search(err.message)
+                result = result_re.search(err.response['Error']['Message'])
                 if result:
                     arn = result.group(0).replace('Endpoint ', '').replace(
                         ' already', '')
@@ -283,7 +282,7 @@ class Device(SNSCRUDMixin, models.Model):
             raise NotRegisteredException
 
         new_token = new_token if new_token else self.push_token
-        attributes = {"Enabled": True, "Token": new_token}
+        attributes = {"Enabled": "true", "Token": new_token}
         if custom_user_data:
             attributes["CustomUserData"] = custom_user_data
         answer = connection.set_endpoint_attributes(EndpointArn=self.arn, Attributes=attributes)
